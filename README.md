@@ -1,6 +1,7 @@
 # CRAFTS TOD Manual Mask
 
 中文完整操作说明见 [软件操作指南](docs/USER_GUIDE_CN.md)。
+定标批次的一键入口见 [启动说明](rfi_calibration_launcher/README.md)。
 
 This tool groups calibrated CRAFTS `*_T.fits` files by scan name and four-digit
 file serial, requires M01--M19, and shows two polarization waterfalls. Each
@@ -169,6 +170,12 @@ python -m pytest -q test_crafts_tod_mask.py
 ```
 
 ## Update Log
+
+### 2026-10-27 — Mask controls and session safety
+
+- Configurable shortcuts and unified automatic-mask controls.
+- Guard unsaved navigation and restart idle RFI sessions safely.
+- Add the campaign launcher with a local configuration template.
 
 ### 2026-09-16 — Web viewport navigation and beam comparison
 

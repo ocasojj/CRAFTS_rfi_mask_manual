@@ -1,0 +1,26 @@
+{
+  "data_root": "/path/to/calibrated/output",
+  "audit_utc": "YYYY-MM-DDTHH:MM:SSZ",
+  "audit_tag": "local-audit",
+  "scans": [
+    {
+      "idrift": 1,
+      "project": "EXAMPLE",
+      "scan": "ExampleScan__YYYYMMDD",
+      "source": "ExampleScan",
+      "relative_dir": "EXAMPLE/ExampleScan__YYYYMMDD",
+      "count": 19,
+      "all_serials": [
+        "0001"
+      ],
+      "serials": [
+        "0001"
+      ],
+      "blocked_serials": [],
+      "generation_complete": false,
+      "hfc_io_error_count": 0,
+      "missing_hfc_counts": {},
+      "affected_serials": []
+    }
+  ]
+}

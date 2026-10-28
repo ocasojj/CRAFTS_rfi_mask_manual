@@ -14,8 +14,12 @@ import copy
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from io import BytesIO
+import hmac
 import json
+import os
 from pathlib import Path
+import secrets
+import tempfile
 import threading
 import time
 import traceback
@@ -247,6 +251,10 @@ class NativeMaskState:
         self.dirty = False
         self.phase = "starting"
         self.busy = True
+        self.navigation_busy = False
+        self.shutting_down = False
+        self.session_instance = secrets.token_hex(16)
+        self.control_token = secrets.token_urlsafe(32)
         self.message = "Starting native web UI"
         self.logs: list[dict[str, Any]] = []
         self.undo_stack: list[MaskDocument] = []
@@ -285,10 +293,13 @@ class NativeMaskState:
 
     def public_state(self) -> dict[str, Any]:
         with self.lock:
-            ready = self.aggregate is not None and self.phase not in {"loading", "beam-loading", "error"}
+            ready = self.aggregate is not None and self.phase not in {"loading", "beam-loading", "error", "stopping"}
             group = self.group
             return {
                 "version": APP_VERSION,
+                "session": {"protocol": 1, "pid": os.getpid(), "instance": self.session_instance,
+                            "input_dir": str(Path(self.args.input_dir).resolve()),
+                            "mask_dir": str(Path(self.args.mask_dir).resolve())},
                 "phase": self.phase,
                 "busy": self.busy,
                 "message": self.message,
@@ -314,9 +325,28 @@ class NativeMaskState:
                 "logs": list(self.logs),
             }
 
-    async def load(self, index: int | None = None) -> None:
+    def prepare_shutdown(self, payload: dict[str, Any], token: str) -> None:
+        """Atomically recheck the visible state and reject further edits before stopping."""
         with self.lock:
-            if self.dirty and index is not None and index != self.index:
+            if not token or not hmac.compare_digest(token, self.control_token):
+                raise PermissionError("关闭请求缺少有效的本用户控制凭据。")
+            if payload.get("pid") != os.getpid() or payload.get("instance") != self.session_instance:
+                raise ValueError("会话实例已变化，未关闭任何进程。")
+            if self.shutting_down or self.busy or self.navigation_busy:
+                raise ValueError("会话正在加载、保存或切换，暂不能重启。")
+            if self.dirty:
+                raise ValueError("存在未保存的人工标记，请先在网页保存。")
+            if payload.get("group_key") != self.group.key or payload.get("revision") != self.revision:
+                raise ValueError("条目或编辑状态已变化，请重新检查后再选择。")
+            self.shutting_down = True
+            self._log("Safe shutdown requested by launcher; no unsaved edits", "stopping", True)
+
+    async def load(self, index: int | None = None, *, discard_unsaved: bool = False,
+                   raise_errors: bool = False) -> None:
+        with self.lock:
+            if self.shutting_down:
+                raise ValueError("会话正在关闭，不再加载新条目。")
+            if self.dirty and index is not None and index != self.index and not discard_unsaved:
                 raise ValueError("Unsaved edits: save or revert before changing nfile")
             if index is not None:
                 self.index = index % len(self.groups)
@@ -374,6 +404,51 @@ class NativeMaskState:
         except Exception as error:
             self._log(f"ERROR: {error}", "error", False)
             traceback.print_exc()
+            if raise_errors:
+                raise
+
+    async def navigate(self, direction: str, resolution: str, group_key: str,
+                       revision: int) -> dict[str, Any]:
+        """Resolve unsaved edits before changing groups; retain the current group on failure."""
+        with self.lock:
+            if self.busy or self.navigation_busy or self.aggregate is None:
+                raise ValueError("当前操作尚未完成，请稍后再切换。")
+            if group_key != self.group.key or revision != self.revision:
+                raise ValueError("当前条目或标记已变化，请取消后重新选择跳转。")
+            if direction not in {"previous", "next"} or resolution not in {"ask", "save", "discard"}:
+                raise ValueError("无效的跳转选项。")
+            target = (self.index + (-1 if direction == "previous" else 1)) % len(self.groups)
+            if target == self.index:
+                return {"saved": False, "paths": []}
+            if self.dirty and resolution == "ask":
+                raise ValueError("有未保存的标记，请选择保存或舍弃后再跳转。")
+            self.navigation_busy = True
+        paths = []
+        try:
+            if resolution == "save":
+                paths = await self.save()
+            # Snapshot after a successful save: a failed load must not undo that save.
+            fields = ("index", "aggregate", "frequency", "mjd", "document", "dirty",
+                      "view_mode", "selected_beam", "single", "single_medians", "single_spectra",
+                      "spectra", "local_medians", "spectrum_revision", "spectrum_content_revision")
+            with self.lock:
+                previous = {name: getattr(self, name) for name in fields}
+                previous["undo_stack"] = list(self.undo_stack)
+            try:
+                await self.load(target, discard_unsaved=resolution == "discard", raise_errors=True)
+            except Exception as error:
+                with self.lock:
+                    for name, value in previous.items():
+                        setattr(self, name, value)
+                    self.image_cache.clear()
+                    self.revision += 1
+                    self._log(f"LOAD ERROR: {error}; kept current nfile and manual edits", "ready", False)
+                self.schedule_spectrum()
+                raise
+            return {"saved": bool(paths), "paths": paths}
+        finally:
+            with self.lock:
+                self.navigation_busy = False
 
     async def set_view(self, view_mode: str, beam: str | None = None) -> None:
         view_mode = str(view_mode).lower()
@@ -571,7 +646,7 @@ class NativeMaskState:
                 self._log(f"Saved {json_target.name} + {len(paths)} beam NPZ files", "ready", False)
             return [str(json_target), *map(str, paths)]
         except Exception as error:
-            self._log(f"SAVE ERROR: {error}", "error", False)
+            self._log(f"SAVE ERROR: {error}", "ready", False)
             raise
 
     def schedule_spectrum(self) -> None:
@@ -831,7 +906,14 @@ class ActionHandler(BaseHandler):
             payload = json.loads(self.request.body or b"{}")
             action = payload.get("action")
             result: dict[str, Any] = {}
-            if action == "edit":
+            if self.state.shutting_down or self.state.navigation_busy or (self.state.busy and action != "save_summary"):
+                raise ValueError("正在加载、保存或切换条目，请等待完成。")
+            if action == "navigate":
+                result.update(await self.state.navigate(
+                    str(payload.get("direction", "")), str(payload.get("resolution", "ask")),
+                    str(payload.get("group_key", "")), payload.get("revision"),
+                ))
+            elif action == "edit":
                 self.state.edit(payload)
             elif action == "undo":
                 self.state.undo()
@@ -862,6 +944,49 @@ class ActionHandler(BaseHandler):
             self.write_json({"error": str(error), "state": self.state.public_state()}, 400)
 
 
+class ShutdownHandler(BaseHandler):
+    async def post(self) -> None:
+        try:
+            if self.request.remote_ip not in {"127.0.0.1", "::1"}:
+                raise PermissionError("只允许本机启动器请求关闭。")
+            payload = json.loads(self.request.body or b"{}")
+            self.state.prepare_shutdown(payload, self.request.headers.get("X-RFI-Control-Token", ""))
+        except PermissionError as error:
+            self.write_json({"error": str(error)}, 403)
+            return
+        except (ValueError, TypeError) as error:
+            self.write_json({"error": str(error)}, 409)
+            return
+        self.write_json({"stopping": True, "pid": os.getpid(), "instance": self.state.session_instance})
+        self.finish()
+        tornado.ioloop.IOLoop.current().call_later(0.1, self.settings["shutdown_callback"])
+
+
+def register_session_control(state: NativeMaskState) -> Path:
+    directory = Path.home() / '.cache/crafts-rfi/sessions'
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    info = directory.stat()
+    if directory.is_symlink() or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        raise PermissionError(f'控制目录必须属于当前用户且仅本人可访问：{directory}')
+    record = directory / f'{state.args.port}-{os.getpid()}.json'
+    with tempfile.NamedTemporaryFile(mode='w', dir=directory, prefix='.session-', delete=False) as stream:
+        json.dump({'protocol': 1, 'pid': os.getpid(), 'instance': state.session_instance,
+                   'port': state.args.port, 'token': state.control_token,
+                   'editor': str(Path(__file__).resolve())}, stream)
+        temporary = Path(stream.name)
+    temporary.replace(record)
+    return record
+
+
+def remove_session_control(record: Path | None, state: NativeMaskState) -> None:
+    if record is not None:
+        try:
+            if json.loads(record.read_text()).get('instance') == state.session_instance:
+                record.unlink()
+        except (OSError, ValueError):
+            pass
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", nargs="?", help="nfile, group key, or SCAN:NFILE")
@@ -881,15 +1006,28 @@ def main() -> None:
     args = parse_args()
     state = NativeMaskState(args)
     app = tornado.web.Application(
-        [(r"/", IndexHandler), (r"/api/state", StateHandler), (r"/api/spectrum", SpectrumHandler), (r"/api/view.jpg", ViewHandler), (r"/api/action", ActionHandler)],
+        [(r"/", IndexHandler), (r"/api/state", StateHandler), (r"/api/spectrum", SpectrumHandler), (r"/api/view.jpg", ViewHandler), (r"/api/action", ActionHandler), (r"/api/control/shutdown", ShutdownHandler)],
         mask_state=state,
         ui_html=args.ui_html.read_text(encoding="utf-8"),
         compress_response=True,
     )
-    app.listen(args.port, address=args.address)
-    print(f"Native UI listening on http://{args.address}:{args.port}/", flush=True)
-    asyncio.get_event_loop().create_task(state.load())
-    tornado.ioloop.IOLoop.current().start()
+    server = app.listen(args.port, address=args.address)
+    loop = tornado.ioloop.IOLoop.current()
+    def stop_server():
+        server.stop()
+        loop.stop()
+    app.settings['shutdown_callback'] = stop_server
+    record = None
+    try:
+        record = register_session_control(state)
+        print(f"Native UI listening on http://{args.address}:{args.port}/", flush=True)
+        asyncio.get_event_loop().create_task(state.load())
+        loop.start()
+    finally:
+        server.stop()
+        state.executor.shutdown(wait=True)
+        state.render_executor.shutdown(wait=True)
+        remove_session_control(record, state)
 
 
 if __name__ == "__main__":

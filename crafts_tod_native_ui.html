@@ -35,9 +35,9 @@ button, select {
   color: var(--text);
   background: #172332;
   border: 1px solid #31445b;
-  border-radius: 6px;
-  min-height: 30px;
-  padding: 4px 9px;
+  border-radius: 7px;
+  min-height: 36px;
+  padding: 6px 11px;
   cursor: pointer;
 }
 button { white-space: nowrap; }
@@ -73,7 +73,7 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
 .group { color: var(--muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spacer { flex: 1; }
 .coord { font-variant-numeric: tabular-nums; color: var(--accent); max-width: 32vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#toggleSidebar { color: var(--muted); background: transparent; }
+#toggleSidebar { color: var(--muted); background: transparent; min-height: 30px; padding: 4px 9px; }
 .layout {
   height: calc(100vh - var(--header-height));
   height: calc(100dvh - var(--header-height));
@@ -93,7 +93,7 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
   scrollbar-width: thin;
   scrollbar-color: #3b5068 #101721;
 }
-.toolbar { flex: 0 0 auto; position: relative; z-index: 6; }
+.toolbar { flex: 0 0 auto; position: relative; z-index: 6; padding: 8px; border: 1px solid #2d4157; border-radius: 10px; background: #101a25; font-size: 13px; }
 .toolbar-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
 .toolbar-row + .toolbar-row { margin-top: 7px; }
 .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
@@ -105,7 +105,17 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
 .beam-choice:has(#beamSelect[hidden]) { display: none; }
 #beamSelect { min-width: 69px; }
 .check { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); white-space: nowrap; }
-.auto-controls { gap: 10px; }
+.control-group.option-controls { gap: 6px; padding: 5px 7px; border: 1px solid #3b536b; border-radius: 9px; background: #142232; }
+.option-controls .group-label { color: #b9ccde; margin: 0 3px; }
+.toggle-card { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 10px; border: 1px solid #466078; border-radius: 6px; background: #1a293a; color: #cfdeec; font-weight: 550; white-space: nowrap; cursor: pointer; user-select: none; }
+.toggle-card input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; cursor: inherit; }
+.toggle-card:has(input:checked) { border-color: #57c7ff; background: #173e55; color: #e5f5ff; box-shadow: 0 0 0 1px #57c7ff22 inset; }
+.toggle-card.scope-toggle:has(input:checked) { border-color: #ffc857; background: #44371f; color: #ffe6b3; }
+.toggle-card:not(:has(input:disabled)):hover { border-color: #c4e7ff; filter: brightness(1.12); }
+.toggle-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggle-card:has(input:disabled) { opacity: .42; cursor: not-allowed; }
+kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; border: 1px solid #627e96; border-radius: 3px; color: #bed3e5; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; vertical-align: middle; }
+.toggle-card kbd { margin-left: 0; }
 .save-controls { margin-left: auto; }
 #save { min-width: 78px; }
 .edit-controls button { padding-inline: 8px; }
@@ -117,8 +127,8 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
   background: #172332;
   border: 1px solid #31445b;
   border-radius: 6px;
-  min-height: 30px;
-  padding: 5px 10px;
+  min-height: 36px;
+  padding: 7px 11px;
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -131,8 +141,8 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
   position: absolute;
   top: calc(100% + 7px);
   right: 0;
-  width: min(480px, calc(100vw - 28px));
-  max-height: min(430px, 65vh);
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(620px, 72vh);
   overflow: auto;
   padding: 12px;
   border: 1px solid #425a73;
@@ -144,6 +154,20 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
 .display-row + .display-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .display-label { min-width: 75px; color: #b5c8dc; }
 .display-note { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 11px; }
+.settings-tabs { display: flex; gap: 6px; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 1px solid var(--line); }
+.settings-tabs button { flex: 1; }
+.shortcut-section { margin: 14px 0 5px; font-size: 12px; color: #c2d7e9; }
+#shortcutRows { max-height: min(300px, calc(72vh - 230px)); overflow-y: auto; margin-top: 8px; padding-right: 6px; border-block: 1px solid var(--line); scrollbar-width: thin; }
+.shortcut-row { display: grid; grid-template-columns: minmax(100px, 1fr) 125px 52px; gap: 8px; align-items: center; padding: 4px 0; }
+.shortcut-input { width: 100%; min-height: 34px; border: 1px solid #48627b; border-radius: 5px; background: #0b151f; color: var(--text); text-align: center; cursor: pointer; }
+.shortcut-input:focus { border-color: var(--accent); background: #173449; }
+.shortcut-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.settings-message { flex: 1; color: var(--good); font-size: 12px; }
+.settings-message.error, .dialog-error { color: #ff9db0; }
+.navigation-dialog { width: min(560px, 94vw); grid-template-rows: auto auto auto auto; }
+.navigation-actions { flex-wrap: wrap; }
+.navigation-actions .primary { min-height: 42px; }
+.navigation-actions .discard { border-color: #805963; color: #f1b8c3; background: #302027; }
 .rfi-width { min-width: 94px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
 .image-scale { min-width: 61px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
 #spectrumShareValue { color: var(--accent); min-width: 30px; font-variant-numeric: tabular-nums; }
@@ -262,7 +286,7 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
   <div id="group" class="group">等待服务器…</div>
   <div class="spacer"></div>
   <span class="coord" id="coord">—</span>
-  <button id="toggleSidebar" type="button" aria-controls="taskSidebar" aria-expanded="true" title="展开或收起任务状态与日志">侧栏</button>
+  <button id="toggleSidebar" type="button" aria-controls="taskSidebar" aria-expanded="true" title="展开或收起任务状态与日志"><span id="sidebarLabel">侧栏</span><kbd id="key-sidebar" aria-hidden="true" hidden></kbd></button>
 </header>
 <div class="layout">
   <main class="main" aria-label="RFI 标注工作区">
@@ -280,59 +304,65 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
           </div>
         </div>
         <div class="control-group entry-controls" aria-label="切换数据条目">
-          <button id="prev">上一个</button>
-          <button id="next">下一个</button>
+          <button id="prev"><span>上一个</span><kbd id="key-previous" aria-hidden="true" hidden></kbd></button>
+          <button id="next"><span>下一个</span><kbd id="key-next" aria-hidden="true" hidden></kbd></button>
         </div>
-        <div class="control-group auto-controls" aria-label="自动 RFI 图层">
-          <label class="check"><input id="applyAuto" type="checkbox" checked>应用自动 RFI</label>
-          <label class="check"><input id="showAuto" type="checkbox" checked>显示自动 RFI</label>
+        <div class="control-group option-controls" role="group" aria-label="显示与标记">
+          <span class="group-label">显示与标记</span>
+          <label class="toggle-card" title="关闭后，两幅瀑布图和平均谱均不使用自动 mask，并隐藏自动覆盖层；人工标记保留。"><input id="applyAuto" type="checkbox" aria-label="使用自动 mask" aria-keyshortcuts="A" checked><span>使用自动 mask</span><kbd id="key-applyAuto" aria-hidden="true"></kbd></label>
+          <label class="toggle-card" title="仅控制自动标记的覆盖层显示，需要先启用自动 mask。"><input id="showAuto" type="checkbox" aria-label="显示自动标记" aria-keyshortcuts="V" checked><span>显示自动标记</span><kbd id="key-showAuto" aria-hidden="true"></kbd></label>
+          <label class="toggle-card scope-toggle" title="开启后，手动标记同时作用于 Pol 0 和 Pol 1；不会改变已有标记。"><input id="both" type="checkbox" aria-label="双偏振" aria-keyshortcuts="P"><span>双偏振</span><kbd id="key-both" aria-hidden="true"></kbd></label>
         </div>
         <div class="control-group save-controls">
-          <button id="save" class="primary">保存 S</button>
+          <button id="save" class="primary"><span>保存</span><kbd id="key-save" aria-hidden="true" hidden></kbd></button>
         </div>
       </div>
       <div class="toolbar-row toolbar-secondary">
         <div class="control-group edit-controls" aria-label="标记工具">
           <span class="group-label">标记</span>
-          <button data-mode="frequency" class="active">频率 F</button>
-          <button data-mode="time">时间 T</button>
-          <button data-mode="box">矩形 B</button>
-          <button data-mode="delete">删除 D</button>
-          <button data-mode="pan">平移 G</button>
-          <label class="check"><input id="both" type="checkbox">双偏振</label>
+          <button id="toolFrequency" data-mode="frequency" class="active"><span>频率</span><kbd id="key-frequency" aria-hidden="true" hidden></kbd></button>
+          <button id="toolTime" data-mode="time"><span>时间</span><kbd id="key-time" aria-hidden="true" hidden></kbd></button>
+          <button id="toolBox" data-mode="box"><span>矩形</span><kbd id="key-box" aria-hidden="true" hidden></kbd></button>
+          <button id="toolDelete" data-mode="delete"><span>删除</span><kbd id="key-delete" aria-hidden="true" hidden></kbd></button>
+          <button id="toolPan" data-mode="pan"><span>平移</span><kbd id="key-pan" aria-hidden="true" hidden></kbd></button>
         </div>
         <div class="control-group history-controls" aria-label="编辑与视图恢复">
-          <button id="undo">撤销 U</button>
-          <button id="revert">恢复已保存</button>
-          <button id="viewBack" disabled title="返回上一次缩放或平移的范围，不撤销 mask">返回视图</button>
-          <button id="reset">重置视图 0</button>
+          <button id="undo"><span>撤销</span><kbd id="key-undo" aria-hidden="true" hidden></kbd></button>
+          <button id="revert"><span>恢复已保存</span><kbd id="key-revert" aria-hidden="true" hidden></kbd></button>
+          <button id="viewBack" disabled title="返回上一次缩放或平移的范围，不撤销 mask"><span>返回视图</span><kbd id="key-viewBack" aria-hidden="true" hidden></kbd></button>
+          <button id="reset"><span>重置视图</span><kbd id="key-reset" aria-hidden="true" hidden></kbd></button>
         </div>
         <details id="displayOptions" class="display-options">
-          <summary>显示设置</summary>
+          <summary id="settingsToggle">设置 <kbd id="key-settings" aria-hidden="true"></kbd></summary>
           <div class="display-popover">
+            <div class="settings-tabs" role="tablist" aria-label="设置分类">
+              <button id="displayTab" role="tab" aria-selected="true" aria-controls="displayPane" class="active">显示</button>
+              <button id="shortcutsTab" role="tab" aria-selected="false" aria-controls="shortcutsPane">快捷键</button>
+            </div>
+            <div id="displayPane" role="tabpanel" aria-labelledby="displayTab">
             <div class="display-row">
               <span class="display-label">范围缩放</span>
-              <button data-mode="zoom-frequency">频率放大</button>
-              <button data-mode="zoom-time">时间放大</button>
+              <button id="toolZoomFrequency" data-mode="zoom-frequency"><span>频率放大</span><kbd id="key-zoom-frequency" aria-hidden="true" hidden></kbd></button>
+              <button id="toolZoomTime" data-mode="zoom-time"><span>时间放大</span><kbd id="key-zoom-time" aria-hidden="true" hidden></kbd></button>
               <p class="display-note">选择工具后在图中拖动；仅调整查看范围，不添加或删除 mask。</p>
             </div>
             <div class="display-row">
               <span class="display-label">瀑布图色阶</span>
-              <button id="contrast">对比度 1/4</button>
-              <button id="colorAuto" title="清除 Pol0/Pol1 手动色标范围">色标自动</button>
+              <button id="contrast"><span id="contrastLabel">对比度 1/4</span><kbd id="key-contrast" aria-hidden="true" hidden></kbd></button>
+              <button id="colorAuto" title="清除 Pol0/Pol1 手动色标范围"><span>色标自动</span><kbd id="key-colorAuto" aria-hidden="true" hidden></kbd></button>
               <p class="display-note">也可拖动右侧色标箭头，分别调整两个偏振的亮度范围。</p>
             </div>
             <div class="display-row">
               <span class="display-label">图像分辨率</span>
-              <button id="dpiDown" title="降低瀑布图传输分辨率，提高响应速度">DPI −</button>
+              <button id="dpiDown" title="降低瀑布图传输分辨率，提高响应速度"><span>DPI −</span><kbd id="key-dpiDown" aria-hidden="true" hidden></kbd></button>
               <span id="dpiScale" class="image-scale">DPI 1×</span>
-              <button id="dpiUp" title="提高瀑布图传输分辨率，增强细节">DPI ＋</button>
+              <button id="dpiUp" title="提高瀑布图传输分辨率，增强细节"><span>DPI ＋</span><kbd id="key-dpiUp" aria-hidden="true" hidden></kbd></button>
             </div>
             <div class="display-row">
               <span class="display-label">自动 RFI 宽度</span>
-              <button id="rfiThin" title="减小自动 RFI 显示宽度">RFI −</button>
+              <button id="rfiThin" title="减小自动 RFI 显示宽度"><span>RFI −</span><kbd id="key-rfiThin" aria-hidden="true" hidden></kbd></button>
               <span id="rfiWidth" class="rfi-width">宽度 3 px</span>
-              <button id="rfiThick" title="增加自动 RFI 显示宽度">RFI ＋</button>
+              <button id="rfiThick" title="增加自动 RFI 显示宽度"><span>RFI ＋</span><kbd id="key-rfiThick" aria-hidden="true" hidden></kbd></button>
               <p class="display-note">仅改变自动 RFI 的显示宽度，不改变保存的 manual mask。</p>
             </div>
             <div class="display-row">
@@ -343,12 +373,23 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
                 <option value="percentile">99%数据</option>
                 <option value="full">完整范围</option>
               </select>
+              <p class="display-note">仅调整频谱纵轴的显示范围，不会增加 mask 或删除数据。</p>
             </div>
             <div class="display-row">
               <label class="display-label" for="spectrumShare">频谱高度</label>
               <input id="spectrumShare" type="range" min="18" max="40" step="1" value="24" aria-describedby="spectrumShareValue">
               <output id="spectrumShareValue" for="spectrumShare">24%</output>
               <p class="display-note">调整左侧三个图的相对高度；两个瀑布图保持等高。</p>
+            </div>
+            </div>
+            <div id="shortcutsPane" role="tabpanel" aria-labelledby="shortcutsTab" hidden>
+              <p class="display-note">点击按键框，再按新键。支持字母、数字、常用标点及 Shift 组合；Backspace / Delete 清空，Esc 取消。设置自动保存在当前浏览器中。</p>
+              <div id="shortcutRows"></div>
+              <div class="shortcut-footer">
+                <button id="resetShortcuts">恢复默认快捷键</button>
+                <span id="shortcutMessage" class="settings-message" role="status" aria-live="polite"></span>
+              </div>
+              <p class="display-note">固定操作：Esc 取消，Tab 切换焦点；Option / Alt + 拖动或滚轮缩放频率，Shift + 拖动或滚轮缩放时间。Command / Ctrl 组合键保留给浏览器。</p>
             </div>
           </div>
         </details>
@@ -386,6 +427,7 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
     <section>
       <div class="section-heading">当前任务</div>
       <div id="summary" class="status">连接服务器中…</div>
+      <div id="autoMaskStatus" class="status" aria-live="polite">自动 mask：三图已启用</div>
     </section>
     <section>
       <div class="legend">
@@ -417,11 +459,124 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
   </div>
 </div>
 
+<div id="navigateConfirm" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="navigateTitle" aria-describedby="navigateExplanation" hidden>
+  <div class="save-dialog navigation-dialog">
+    <h2 id="navigateTitle">当前标记尚未保存</h2>
+    <p id="navigateExplanation"></p>
+    <p id="navigateError" class="dialog-error" role="alert" hidden></p>
+    <div class="dialog-actions navigation-actions">
+      <button id="cancelNavigate">取消 <kbd aria-hidden="true">Esc</kbd></button>
+      <button id="discardNavigate" class="discard">不保存并跳转</button>
+      <button id="saveNavigate" class="primary"><span id="saveNavigateLabel">保存并跳转</span><kbd aria-hidden="true">Enter</kbd></button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const $=s=>document.querySelector(s), canvases=[$('#pol0'),$('#pol1')], PAD={l:62,r:74,t:23,b:27};
 const IMAGE_SCALES=[.5,.75,1,1.25,1.5,2,3,4];
 const SPECTRUM_Y_LABELS={strong:'强抗RFI',robust:'抗RFI',percentile:'99%数据',full:'完整范围'};
+const SHORTCUTS=[
+  {id:'frequency',label:'频率标记',key:'f',control:'toolFrequency',section:'标记工具'},
+  {id:'time',label:'时间标记',key:'t',control:'toolTime',section:'标记工具'},
+  {id:'box',label:'矩形标记',key:'b',control:'toolBox',section:'标记工具'},
+  {id:'delete',label:'删除标记',key:'d',control:'toolDelete',section:'标记工具'},
+  {id:'pan',label:'平移',key:'g',control:'toolPan',section:'标记工具'},
+  {id:'both',label:'双偏振',key:'p',control:'both',toggle:true,section:'标记工具'},
+  {id:'undo',label:'撤销',key:'u',control:'undo',section:'标记工具'},
+  {id:'revert',label:'恢复已保存标记',key:'',control:'revert',section:'标记工具'},
+  {id:'save',label:'保存',key:'s',control:'save',section:'保存与条目'},
+  {id:'previous',label:'上一个条目',key:'[',control:'prev',section:'保存与条目'},
+  {id:'next',label:'下一个条目',key:']',control:'next',section:'保存与条目'},
+  {id:'applyAuto',label:'使用自动 mask',key:'a',control:'applyAuto',toggle:true,section:'显示与视图'},
+  {id:'showAuto',label:'显示自动标记',key:'v',control:'showAuto',toggle:true,section:'显示与视图'},
+  {id:'reset',label:'重置视图',key:'0',control:'reset',section:'显示与视图'},
+  {id:'viewBack',label:'返回上次视图',key:'',control:'viewBack',section:'显示与视图'},
+  {id:'zoom-frequency',label:'频率放大工具',key:'',control:'toolZoomFrequency',section:'显示与视图'},
+  {id:'zoom-time',label:'时间放大工具',key:'',control:'toolZoomTime',section:'显示与视图'},
+  {id:'contrast',label:'切换对比度',key:'',control:'contrast',section:'显示与视图'},
+  {id:'colorAuto',label:'自动色标',key:'',control:'colorAuto',section:'显示与视图'},
+  {id:'dpiDown',label:'降低图像分辨率',key:'',control:'dpiDown',section:'显示与视图'},
+  {id:'dpiUp',label:'提高图像分辨率',key:'',control:'dpiUp',section:'显示与视图'},
+  {id:'rfiThin',label:'减小自动标记显示宽度',key:'',control:'rfiThin',section:'显示与视图'},
+  {id:'rfiThick',label:'增大自动标记显示宽度',key:'',control:'rfiThick',section:'显示与视图'},
+  {id:'sidebar',label:'展开 / 收起侧栏',key:'',control:'toggleSidebar',section:'显示与视图'},
+  {id:'settings',label:'打开 / 关闭设置',key:',',control:'settingsToggle',section:'显示与视图'},
+];
+const SHORTCUT_STORAGE='crafts.shortcuts.v1',shortcutFields={};
+let keyBindings=Object.fromEntries(SHORTCUTS.map(a=>[a.id,a.key]));
+function shortcutLabel(binding){return binding?binding.split('+').map(s=>s==='Shift'?'Shift':s.toUpperCase()).join('+'):''}
+function validShortcut(binding){
+  if(typeof binding!=='string')return false;
+  const key=binding.startsWith('Shift+')?binding.slice(6):binding;
+  return binding===''||key.length===1&&"abcdefghijklmnopqrstuvwxyz0123456789[];,./'`\\-=".includes(key);
+}
+function shortcutFromEvent(event){
+  if(event.isComposing||event.ctrlKey||event.metaKey||event.altKey)return null;
+  const shifted={'!':'1','@':'2','#':'3','$':'4','%':'5','^':'6','&':'7','*':'8','(':'9',')':'0','_':'-','+':'=','{':'[','}':']',':':';','"':"'",'<':',','>':'.','?':'/','|':'\\','~':'`'};
+  const key=(event.shiftKey&&shifted[event.key]||event.key).toLowerCase();
+  const binding=(event.shiftKey?'Shift+':'')+key;
+  return validShortcut(binding)&&binding?binding:null;
+}
+function shortcutMessage(text,error=false){$('#shortcutMessage').textContent=text;$('#shortcutMessage').className='settings-message'+(error?' error':'')}
+function refreshShortcutLabels(){
+  for(const item of SHORTCUTS){
+    const binding=keyBindings[item.id],label=shortcutLabel(binding),badge=$('#key-'+item.id),control=$('#'+item.control);
+    badge.textContent=label;badge.hidden=!binding;
+    control.setAttribute('aria-keyshortcuts',binding?binding.split('+').map(k=>k==='Shift'?k:k.toUpperCase()).join('+'):'');
+    if(!control.dataset.baseTitle)control.dataset.baseTitle=control.getAttribute('title')||item.label;
+    control.title=control.dataset.baseTitle+(binding?' · 快捷键 '+label:' · 未绑定快捷键');
+    if(shortcutFields[item.id])shortcutFields[item.id].value=label||'未绑定';
+  }
+}
+function persistShortcuts(){
+  refreshShortcutLabels();
+  try{localStorage.setItem(SHORTCUT_STORAGE,JSON.stringify(keyBindings));shortcutMessage('已保存，按钮提示已同步更新。')}
+  catch{shortcutMessage('本页已生效，但浏览器拒绝保存设置；重新打开后会恢复。',true)}
+}
+function setShortcutBinding(id,binding){
+  if(!SHORTCUTS.some(a=>a.id===id)||!validShortcut(binding)){shortcutMessage('请使用字母、数字、常用标点，或 Shift 组合。',true);return false}
+  const conflict=SHORTCUTS.find(a=>a.id!==id&&binding&&keyBindings[a.id]===binding);
+  if(conflict){shortcutMessage(`${shortcutLabel(binding)} 已用于“${conflict.label}”，请先清空该绑定。`,true);return false}
+  keyBindings[id]=binding;persistShortcuts();return true;
+}
+function setSettingsTab(name){
+  const shortcuts=name==='shortcuts';
+  $('#displayPane').hidden=shortcuts;$('#shortcutsPane').hidden=!shortcuts;
+  $('#displayTab').classList.toggle('active',!shortcuts);$('#shortcutsTab').classList.toggle('active',shortcuts);
+  $('#displayTab').setAttribute('aria-selected',String(!shortcuts));$('#shortcutsTab').setAttribute('aria-selected',String(shortcuts));
+}
+function initShortcuts(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(SHORTCUT_STORAGE)||'{}');
+    if(!saved||typeof saved!=='object'||Array.isArray(saved))throw Error('invalid shortcut settings');
+    const candidate=Object.fromEntries(SHORTCUTS.map(a=>[a.id,saved[a.id]??a.key])),used=new Set();
+    for(const binding of Object.values(candidate)){if(!validShortcut(binding)||binding&&used.has(binding))throw Error('invalid shortcut settings');if(binding)used.add(binding)}
+    keyBindings=candidate;
+  }catch{shortcutMessage('原快捷键设置无效，已恢复默认。',true)}
+  let section='';
+  for(const item of SHORTCUTS){
+    if(section!==item.section){section=item.section;const heading=document.createElement('h3');heading.className='shortcut-section';heading.textContent=section;$('#shortcutRows').appendChild(heading)}
+    const row=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input'),clear=document.createElement('button');
+    row.className='shortcut-row';input.id='binding-'+item.id;input.className='shortcut-input';input.readOnly=true;input.setAttribute('aria-label',item.label+'快捷键');label.htmlFor=input.id;label.textContent=item.label;
+    input.onfocus=()=>shortcutMessage('请按新键；Backspace 清空，Esc 取消。');
+    input.onkeydown=event=>{
+      if(event.key==='Tab')return;
+      event.preventDefault();event.stopPropagation();
+      if(event.repeat||event.isComposing)return;
+      if(event.key==='Escape'){input.blur();shortcutMessage('未更改绑定。');return}
+      if((event.key==='Backspace'||event.key==='Delete')&&!event.ctrlKey&&!event.metaKey&&!event.altKey){setShortcutBinding(item.id,'');return}
+      const binding=shortcutFromEvent(event);
+      if(binding)setShortcutBinding(item.id,binding);else shortcutMessage('支持单键或 Shift 组合；Command / Ctrl、Option / Alt、Esc、Tab、Enter 保留。',true);
+    };
+    clear.textContent='清空';clear.setAttribute('aria-label','清空'+item.label+'快捷键');clear.onclick=()=>setShortcutBinding(item.id,'');
+    shortcutFields[item.id]=input;row.appendChild(label);row.appendChild(input);row.appendChild(clear);$('#shortcutRows').appendChild(row);
+  }
+  $('#displayTab').onclick=()=>setSettingsTab('display');$('#shortcutsTab').onclick=()=>setSettingsTab('shortcuts');
+  $('#resetShortcuts').onclick=()=>{keyBindings=Object.fromEntries(SHORTCUTS.map(a=>[a.id,a.key]));persistShortcuts()};
+  refreshShortcutLabels();
+}
 for(let beam=1;beam<=19;beam++){const option=document.createElement('option');option.value=`M${String(beam).padStart(2,'0')}`;option.textContent=option.value;$('#beamSelect').appendChild(option)}
 function toast(msg,error=false){const d=document.createElement('div');d.className='toast'+(error?' error':'');d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
 function nice(v,n=3){return Number(v).toFixed(n)}
@@ -478,9 +633,19 @@ function rangeZoomView(view,kind,start,end,state){
 function imageDestination(imageView,view,p){
   return{x:p.x+(imageView.f0-view.f0)/(view.f1-view.f0)*p.w,y:p.y+(view.t1-imageView.t1)/(view.t1-view.t0)*p.h,w:(imageView.f1-imageView.f0)/(view.f1-view.f0)*p.w,h:(imageView.t1-imageView.t0)/(view.t1-view.t0)*p.h};
 }
+function automaticMaskDisplay(){
+  const applyAuto=$('#applyAuto').checked;
+  return{applyAuto,showAuto:applyAuto&&$('#showAuto').checked};
+}
+function updateAutomaticControls(){
+  const{applyAuto}=automaticMaskDisplay();
+  $('#showAuto').disabled=Boolean(app.state?.busy||app.navigationPending)||!applyAuto;
+  $('#autoMaskStatus').textContent=applyAuto?'自动 mask：三图已启用':'自动 mask：三图已停用（保留人工标记）';
+}
 function currentImageKey(){
   if(!app.state)return'';
-  return JSON.stringify([app.dataEpoch,app.state.group.key,app.state.view_mode,app.state.selected_beam,$('#applyAuto').checked,$('#showAuto').checked,app.contrast,app.autoWidth,app.colorRanges]);
+  const{applyAuto,showAuto}=automaticMaskDisplay();
+  return JSON.stringify([app.dataEpoch,app.state.group.key,app.state.view_mode,app.state.selected_beam,applyAuto,showAuto,app.contrast,app.autoWidth,app.colorRanges]);
 }
 function viewIsClear(){
   const key=currentImageKey();
@@ -566,7 +731,7 @@ async function flushRenderQueue(){
   if(app.renderRunning||!app.renderPending||!app.state?.ready||app.scopePending)return;
   app.renderPending=false;app.renderRunning=true;app.renderError=null;app.lastRenderStart=performance.now();
   const quality=app.renderQuality;
-  const job={key:currentImageKey(),view:{...app.view},quality,scale:quality==='preview'?Math.min(.75,IMAGE_SCALES[app.imageScaleIndex]):IMAGE_SCALES[app.imageScaleIndex],contrast:app.contrast,autoWidth:app.autoWidth,colorRanges:app.colorRanges.map(r=>r?[...r]:null),applyAuto:$('#applyAuto').checked,showAuto:$('#showAuto').checked,viewMode:app.state.view_mode,beam:app.state.selected_beam,controllers:[]};
+  const job={key:currentImageKey(),view:{...app.view},quality,scale:quality==='preview'?Math.min(.75,IMAGE_SCALES[app.imageScaleIndex]):IMAGE_SCALES[app.imageScaleIndex],contrast:app.contrast,autoWidth:app.autoWidth,colorRanges:app.colorRanges.map(r=>r?[...r]:null),...automaticMaskDisplay(),viewMode:app.state.view_mode,beam:app.state.selected_beam,controllers:[]};
   app.renderSeq++;app.controllers=job.controllers;updateViewStatus();
   try{await Promise.all([renderPanel(0,job),renderPanel(1,job)])}
   finally{app.renderRunning=false;app.controllers=[];updateViewStatus();if(app.renderPending)renderAll({interactive:app.renderQuality==='preview'})}
@@ -658,6 +823,7 @@ async function pollSpectrum(force=false){
 }
 function applyState(s,initial=false){
   if(app.scopePending)return;
+  if(app.state&&s.revision<app.state.revision)return;
   const prior=app.state,newGroup=!prior||prior.group.key!==s.group.key;
   const newScope=newGroup||prior.view_mode!==s.view_mode||prior.selected_beam!==s.selected_beam;
   app.state=s;
@@ -671,8 +837,9 @@ function applyState(s,initial=false){
   const log=$('#log'),nextLog=s.logs.map(x=>`${x.time}  ${x.message}`).join('\n');
   if(log.textContent!==nextLog){const follow=log.scrollHeight-log.scrollTop-log.clientHeight<45;log.textContent=nextLog;if(follow)log.scrollTop=log.scrollHeight}
   document.querySelectorAll('.loading-cover').forEach(cover=>cover.hidden=s.ready);
-  document.querySelectorAll('.toolbar button,.toolbar select,.toolbar input').forEach(b=>b.disabled=s.busy&&b.id!=='spectrumShare');
-  $('#viewBack').disabled=s.busy||!app.history.length;
+  document.querySelectorAll('.toolbar button,.toolbar select,.toolbar input').forEach(b=>b.disabled=Boolean(s.busy||app.navigationPending)&&b.id!=='spectrumShare');
+  updateAutomaticControls();
+  $('#viewBack').disabled=s.busy||app.navigationPending||!app.history.length;
   if(newGroup){invalidateImages();app.meanSpectrum=null;app.spectrumData=null;app.spectrumKey=null;app.history=[];app.referenceFrequency=null;app.view=null}
   else if(newScope){invalidateImages();app.spectrumKey=null}
   if(s.ready&&(!app.view||initial))app.view={f0:s.frequency_range[0],f1:s.frequency_range[1],t0:0,t1:s.shape[0]};
@@ -687,7 +854,7 @@ async function action(payload,{apply=true}={}){
   try{
     if(['previous','next','load'].includes(payload.action)&&app.state?.dirty)throw Error('有未保存的标记，请先保存或恢复已保存内容。');
     const r=await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();
-    if(!r.ok)throw Error(d.error||r.statusText);if(apply)applyState(d.state);return d;
+    if(apply&&d.state)applyState(d.state);if(!r.ok)throw Error(d.error||r.statusText);return d;
   }catch(error){toast(error.message,true);throw error}
 }
 function setMode(mode){
@@ -706,14 +873,60 @@ async function changeDataView(){
   catch(error){if(seq===app.scopeRequest){app.scopePending=false;const response=await fetch('/api/state');applyState(await response.json())}}
 }
 $('#viewMode').onchange=changeDataView;$('#beamSelect').onchange=changeDataView;
-for(const[id,act]of[['undo','undo'],['revert','revert'],['prev','previous'],['next','next']])$('#'+id).onclick=()=>action({action:act}).catch(()=>{});
+for(const[id,act]of[['undo','undo'],['revert','revert']])$('#'+id).onclick=()=>action({action:act}).catch(()=>{});
+function requestNavigation(direction){
+  const s=app.state;
+  if(!s?.ready||s.busy||app.navigationPending||app.scopePending||!$('#navigateConfirm').hidden)return;
+  const count=s.group_count||s.groups?.length;
+  if(count===1){toast('当前扫描只有一个可用条目。');return}
+  const target=(s.index+(direction==='previous'?-1:1)+count)%count,serial=s.groups?.[target]?.serial||'';
+  app.navigationIntent={direction,group_key:s.group.key,revision:s.revision};
+  if(!s.dirty)return executeNavigation('ask');
+  const label=direction==='next'?'下一条':'上一条';
+  const wrap=direction==='next'&&target===0?'（将回到本扫描开头）':direction==='previous'&&target===count-1?'（将回到本扫描末尾）':'';
+  $('#navigateTitle').textContent='当前标记尚未保存';
+  $('#navigateExplanation').textContent=`nfile ${s.group.serial} 有未保存的修改。是否保存后跳到${label} ${serial}？${wrap}“不保存”只舍弃本次未保存修改，不会删除此前保存的文件。`;
+  $('#saveNavigateLabel').textContent='保存并跳到'+label;$('#discardNavigate').textContent='不保存并跳到'+label;
+  $('#navigateError').hidden=true;$('#navigateConfirm').hidden=false;$('#displayOptions').open=false;
+  $('#saveNavigate').focus();
+}
+function closeNavigationConfirmation(){
+  if(app.navigationPending)return;
+  const id=app.navigationIntent?.direction==='previous'?'prev':'next';
+  $('#navigateConfirm').hidden=true;app.navigationIntent=null;$('#'+id).focus();
+}
+async function executeNavigation(resolution){
+  if(app.navigationPending||!app.navigationIntent)return;
+  const intent={...app.navigationIntent},label=intent.direction==='next'?'下一条':'上一条';
+  app.navigationPending=true;$('#navigateError').hidden=true;
+  for(const id of ['saveNavigate','discardNavigate','cancelNavigate'])$('#'+id).disabled=true;
+  $('#saveNavigateLabel').textContent=resolution==='save'?'正在保存并加载…':'正在加载…';
+  applyState(app.state);
+  try{
+    await action({action:'navigate',...intent,resolution});
+    $('#navigateConfirm').hidden=true;app.navigationIntent=null;
+    if(resolution==='save')toast('已保存，已跳到'+label);
+  }catch(error){$('#navigateError').textContent=error.message+' 可取消后重试。';$('#navigateError').hidden=false}
+  finally{
+    app.navigationPending=false;
+    const stale=app.navigationIntent&&(intent.group_key!==app.state.group.key||intent.revision!==app.state.revision);
+    for(const id of ['saveNavigate','discardNavigate'])$('#'+id).disabled=Boolean(stale);
+    $('#cancelNavigate').disabled=false;
+    $('#saveNavigateLabel').textContent='保存并跳到'+label;
+    applyState(app.state);
+    if($('#navigateConfirm').hidden)$('#'+(intent.direction==='previous'?'prev':'next')).focus();
+  }
+}
+$('#prev').onclick=()=>requestNavigation('previous');$('#next').onclick=()=>requestNavigation('next');
+$('#cancelNavigate').onclick=closeNavigationConfirmation;
+$('#saveNavigate').onclick=()=>executeNavigation('save');$('#discardNavigate').onclick=()=>executeNavigation('discard');
 function appendSaveRow(label,counts){const row=document.createElement('tr');for(const value of[label,counts.pol0,counts.pol1,counts.total]){const cell=document.createElement('td');cell.textContent=value;row.appendChild(cell)}$('#saveRows').appendChild(row)}
 function showSaveConfirmation(summary){$('#saveRows').replaceChildren();appendSaveRow('Mean 公共层',summary.mean);for(const[beam,counts]of Object.entries(summary.beams))appendSaveRow(`${beam} 专属层`,counts);$('#saveExplanation').textContent=`nfile ${app.state.group.serial} 将生成 19 个逐-beam NPZ；每个最终 mask = Mean 公共层 ∪ 对应 beam 专属层。以下为归一化后的有效区域数，请确认。`;$('#saveConfirm').hidden=false;$('#confirmSave').focus()}
 $('#save').onclick=async()=>{try{const d=await action({action:'save_summary'});showSaveConfirmation(d.summary)}catch{}};
 function closeSaveConfirmation(){if(app.state?.busy)return;$('#saveConfirm').hidden=true;$('#save').focus()}
 $('#cancelSave').onclick=closeSaveConfirmation;
 $('#confirmSave').onclick=async()=>{const b=$('#confirmSave');b.disabled=true;b.textContent='正在保存…';try{const d=await action({action:'save'});$('#saveConfirm').hidden=true;toast(`已保存 JSON + ${Math.max(0,d.paths.length-1)} 个 beam NPZ`);$('#save').focus()}catch{}finally{b.disabled=false;b.textContent='确认并保存'}};
-$('#contrast').onclick=()=>{app.contrast=(app.contrast+1)%4;app.colorRanges=[null,null];$('#contrast').textContent=`对比度 ${app.contrast+1}/4`;renderAll()};
+$('#contrast').onclick=()=>{app.contrast=(app.contrast+1)%4;app.colorRanges=[null,null];$('#contrastLabel').textContent=`对比度 ${app.contrast+1}/4`;renderAll()};
 $('#colorAuto').onclick=()=>{app.colorRanges=[null,null];renderAll()};
 function changeImageScale(delta){app.imageScaleIndex=Math.max(0,Math.min(IMAGE_SCALES.length-1,app.imageScaleIndex+delta));const scale=IMAGE_SCALES[app.imageScaleIndex];$('#dpiScale').textContent=`DPI ${scale.toFixed(2).replace(/\.?0+$/,'')}×`;renderAll()}
 $('#dpiDown').onclick=()=>changeImageScale(-1);$('#dpiUp').onclick=()=>changeImageScale(1);
@@ -722,7 +935,12 @@ $('#rfiThin').onclick=()=>changeAutoWidth(-1);$('#rfiThick').onclick=()=>changeA
 $('#spectrumY').onchange=()=>{app.spectrumYMode=$('#spectrumY').value;requestLocalDraw()};
 $('#reset').onclick=()=>{if(!app.state?.ready)return;rememberView();app.view={f0:app.state.frequency_range[0],f1:app.state.frequency_range[1],t0:0,t1:app.state.shape[0]};navigationChanged(true)};
 $('#viewBack').onclick=()=>{if(!app.history.length)return;app.view=app.history.pop();$('#viewBack').disabled=!app.history.length;navigationChanged(true)};
-$('#applyAuto').onchange=()=>{app.spectrumKey=null;app.meanSpectrum=null;app.spectrumData=null;renderAll();pollSpectrum(true)};
+$('#applyAuto').onchange=()=>{
+  app.spectrumRequest++;app.spectrumKey=null;app.meanSpectrum=null;app.spectrumData=null;app.spectrumDrawCache=null;
+  invalidateImages();updateAutomaticControls();
+  if(app.state&&app.view){redrawOverlays();drawSpectrum({frequency:[],pol0:[],pol1:[]})}
+  renderAll();pollSpectrum(true);
+};
 $('#showAuto').onchange=()=>renderAll();
 function updateColorDrag(c,event,pol){
   const drag=app.colorDrag;if(!drag||drag.pol!==pol)return false;
@@ -734,7 +952,7 @@ function updateColorDrag(c,event,pol){
   app.imageQuality[pol]='preview';drawPanel(pol);return true;
 }
 function handleWheel(c,event){
-  if(!app.state?.ready||app.scopePending||app.state.busy||app.drag||(!event.altKey&&!event.shiftKey))return;
+  if(!app.state?.ready||app.scopePending||app.navigationPending||app.state.busy||app.drag||!$('#navigateConfirm').hidden||!$('#saveConfirm').hidden||(!event.altKey&&!event.shiftKey))return;
   const d=dataAt(c,event);if(!d.inside)return;event.preventDefault();
   if(!app.wheelActive){rememberView();app.wheelActive=true}
   const axis=event.shiftKey?'time':'frequency',anchor=axis==='time'?d.t:d.f;
@@ -742,7 +960,7 @@ function handleWheel(c,event){
 }
 canvases.forEach((c,pol)=>{
   c.addEventListener('pointerdown',e=>{
-    if(e.button!==0||!app.state?.ready||app.state.busy||app.scopePending||!$('#saveConfirm').hidden)return;
+    if(e.button!==0||!app.state?.ready||app.state.busy||app.scopePending||app.navigationPending||!$('#saveConfirm').hidden||!$('#navigateConfirm').hidden)return;
     const kind=gestureKind(e,app.mode),d=dataAt(c,e);
     if(!e.altKey&&!e.shiftKey){const hit=colorbarHit(c,e,pol);if(hit){c.setPointerCapture(e.pointerId);app.colorRanges[pol]=[...(app.colorRanges[pol]||app.limits[pol])];app.colorDrag={pol,handle:hit.handle,base:hit.base};updateColorDrag(c,e,pol);return}}
     if(!d.inside)return;
@@ -796,7 +1014,7 @@ function setSidebarWidth(value,save=true){
   if(save)storePreference('crafts.sidebarWidth',width);
 }
 function setSidebarCollapsed(collapsed,save=true){
-  document.body.classList.toggle('sidebar-collapsed',collapsed);$('#toggleSidebar').setAttribute('aria-expanded',String(!collapsed));$('#toggleSidebar').textContent=collapsed?'展开侧栏':'收起侧栏';
+  document.body.classList.toggle('sidebar-collapsed',collapsed);$('#toggleSidebar').setAttribute('aria-expanded',String(!collapsed));$('#sidebarLabel').textContent=collapsed?'展开侧栏':'收起侧栏';
   if(save){app.sidebarUserChoice=true;storePreference('crafts.sidebarCollapsed',collapsed?'1':'0')}
 }
 function setSpectrumShare(value,save=true){const share=Math.max(18,Math.min(40,Number(value)||24));document.documentElement.style.setProperty('--spectrum-share',`${share}%`);$('#spectrumShare').value=String(share);$('#spectrumShareValue').textContent=`${share}%`;if(save)storePreference('crafts.spectrumShare',share)}
@@ -814,18 +1032,27 @@ function initLayout(){
   document.addEventListener('pointerdown',e=>{if(!$('#displayOptions').contains(e.target))$('#displayOptions').open=false});
 }
 addEventListener('keydown',e=>{
-  if(!$('#saveConfirm').hidden){
-    if(e.key==='Escape'){e.preventDefault();closeSaveConfirmation()}
-    if(e.key==='Tab'){const buttons=[$('#cancelSave'),$('#confirmSave')].filter(b=>!b.disabled);if(buttons.length){e.preventDefault();const i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus()}}
+  const navigating=!$('#navigateConfirm').hidden;
+  if(navigating||!$('#saveConfirm').hidden){
+    if(e.key==='Escape'){e.preventDefault();if(navigating)closeNavigationConfirmation();else closeSaveConfirmation()}
+    if(e.key==='Tab'){e.preventDefault();const buttons=(navigating?[$('#cancelNavigate'),$('#discardNavigate'),$('#saveNavigate')]:[$('#cancelSave'),$('#confirmSave')]).filter(b=>!b.disabled);if(buttons.length){const i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus()}}
     return;
   }
-  if(e.target.matches('input,select,textarea')||e.ctrlKey||e.metaKey)return;
+  if(e.isComposing||e.ctrlKey||e.metaKey||e.altKey||e.target.isContentEditable)return;
+  if(e.target.matches('input,select,textarea')&&!['applyAuto','showAuto','both'].includes(e.target.id))return;
   if(e.key==='Escape'){app.drag=null;app.colorDrag=null;$('#displayOptions').open=false;requestLocalDraw();return}
-  if(app.state?.busy||app.scopePending)return;
-  const k=e.key.toLowerCase();if('ftbdg'.includes(k))setMode({f:'frequency',t:'time',b:'box',d:'delete',g:'pan'}[k]);
-  if(k==='u')$('#undo').click();if(k==='s'){$('#save').click();e.preventDefault()}if(k==='0')$('#reset').click();
+  if(app.state?.busy||app.scopePending||app.navigationPending||e.repeat||!app.state?.ready)return;
+  const binding=shortcutFromEvent(e),item=SHORTCUTS.find(a=>binding&&keyBindings[a.id]===binding);
+  if(!item)return;
+  e.preventDefault();const control=$('#'+item.control);
+  if(control.disabled){if(item.id==='showAuto')toast('先开启“使用自动 mask”');return}
+  if(item.toggle){control.checked=!control.checked;control.onchange?.();toast(`${item.label}：${control.checked?'开启':'关闭'}`)}
+  else if(item.id==='settings'){$('#displayOptions').open=!$('#displayOptions').open}
+  else control.click();
 });
+addEventListener('beforeunload',event=>{if(app.state?.dirty||app.navigationPending||app.state?.phase==='saving'){event.preventDefault();event.returnValue=''}});
 initLayout();
+initShortcuts();
 new ResizeObserver(()=>{if(app.state?.ready)navigationChanged()}).observe($('.plot-stack'));
 poll();
 

@@ -5,3 +5,10 @@ __pycache__/
 mask_save_validation/
 runtime_smoke/
 *.zip
+
+# Local campaign configuration and annotation products
+/rfi_calibration_launcher/scans.json
+/rfi_calibration_launcher/CALIBRATION_AUDIT.md
+*_manual_mask.json
+*_manual_rfi_mask.npz
+.session.lock
