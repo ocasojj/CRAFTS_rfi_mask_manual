@@ -13,10 +13,9 @@ import sys
 import tempfile
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_EDITOR = Path.home() / 'project/crafts_tod_manual_mask_v2/crafts_tod_native_web.py'
-DEFAULT_OUTPUT = Path.home() / 'project/rfi_runs/calibration_vulpecula_perseus_20260905'
-DEFAULT_AUTO_ROOT = Path('/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/'
-                         'rfi_vulpecula_perseus_20261014/products')
+DEFAULT_EDITOR = HERE.parent / 'crafts_tod_native_web.py'
+DEFAULT_OUTPUT = Path(os.environ.get('CRAFTS_OUTPUT_ROOT', 'rfi_runs'))
+DEFAULT_AUTO_ROOT = os.environ.get('CRAFTS_AUTO_ROOT')
 
 
 def parser():
@@ -58,7 +57,7 @@ def show_list(manifest):
         if r['blocked_serials']:
             marker += ' [暂不载入:'+','.join(r['blocked_serials'])+']'
         print(f"{r['idrift']:>6}  {r['serials'][0]}–{r['serials'][-1]}  {r['count']:>7}  {r['relative_dir']}{marker}")
-    print('\n启动: bash ~/project/run_rfi_calibration.sh <idrift或完整扫描名> [v1|v2|v3] [0001]')
+    print('\n启动: bash run_rfi_calibration.sh <idrift或完整扫描名> [v1|v2|v3] [0001]')
     print('默认 v1 + 两类自动 mask；同一版本载入已有人工标记，新版本从空白人工标记开始。')
     print('旧人工版本首次启用自动层前完整备份；不会清空已有标记或自动改为 v2。')
     print('HFC需复核不等于RFI；列表其余扫描也未做绝对定标的科学验收。')
@@ -68,6 +67,8 @@ def check_contract(destination, contract):
     """Allow only the explicit manual-only -> automatic-layer migration."""
     if destination.is_symlink() or destination.resolve() != destination:
         raise ValueError(f'保存目录不能通过软链接指向其他版本：{destination}')
+    if (destination / 'legacy_import_pending.json').exists():
+        raise ValueError(f'旧人工标记导入尚未完成，请先完成或恢复导入：{destination / "legacy_import_pending.json"}')
     record = destination / 'run.json'
     if record.exists():
         if record.is_symlink():
@@ -165,8 +166,11 @@ def main():
     if not source.is_dir() or not editor.is_file():
         raise ValueError(f'输入目录或 Web 程序不存在：{source}；{editor}')
 
-    # Only use this campaign. Never borrow masks from the older five-stripe run.
+    # Automatic products must come from this campaign. Audited manual imports
+    # are independent copies in the selected version's output directory.
     if args.auto == 'required':
+        if args.auto_root is None:
+            raise ValueError('Set --auto-root or CRAFTS_AUTO_ROOT to the automatic mask products directory.')
         auto_scan = args.auto_root.expanduser().resolve() / row['relative_dir']
         auto_dirs = [auto_scan/'one_channel_rfi_v2_products', auto_scan/'satellite_rfi_1380_products']
     else:
@@ -206,6 +210,12 @@ def main():
         print('保存仍为人工 mask；两类自动 mask 独立保留，不写入或改变原始 FITS。')
     existing = len(list(destination.glob('*_manual_mask.json'))) if destination.exists() else 0
     print(f'此版本已有 {existing} 个 nfile 的 JSON（文件存在不代表人工复核完成）。')
+    import_record = destination / 'legacy_import.json'
+    if import_record.is_file():
+        imported = json.loads(import_record.read_text())
+        serials = imported.get('imported_serials', [])
+        if imported.get('complete') and serials:
+            print(f'已承接旧人工标记：{len(serials)} 个 nfile（{serials[0]}–{serials[-1]}）；来源记录：{import_record}')
     if row['hfc_io_error_count']:
         print(f"提示：该扫描有 {row['hfc_io_error_count']} 个 HFC 输入读取问题；请区分定标异常与 RFI。")
         print('详见同目录 CALIBRATION_AUDIT.md；此入口不修改或修复定标数据。')
@@ -215,7 +225,7 @@ def main():
     if row.get('affected_serials'):
         print('此前定位的关联 nfile: '+', '.join(row['affected_serials'])+'（见报告中的 beam 和文件名）')
     print(f'浏览器: http://127.0.0.1:{args.port}')
-    print(f'Mac 连接: ssh -L {args.port}:127.0.0.1:{args.port} CRAFTS')
+    print(f'Mac 连接: ssh -L {args.port}:127.0.0.1:{args.port} YOUR_SSH_HOST')
 
     contract = {'campaign_root':manifest['data_root'],'input_dir':str(source),
                 'mask_dir':str(destination),'mask_version':args.version,'idrift':row['idrift'],

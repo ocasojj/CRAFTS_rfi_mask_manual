@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+remote_host="${CRAFTS_SSH_HOST:?Set CRAFTS_SSH_HOST to your SSH alias}"
+remote_app="${CRAFTS_REMOTE_APP:?Set CRAFTS_REMOTE_APP to the remote checkout}"
+input_dir="${CRAFTS_INPUT_DIR:?Set CRAFTS_INPUT_DIR to the remote input directory}"
+mask_dir="${CRAFTS_MASK_DIR:?Set CRAFTS_MASK_DIR to the remote output directory}"
+remote_python="${CRAFTS_REMOTE_PYTHON:-python3}"
+# Escape literal quotes for the remote shell command.
+for remote_key in remote_app input_dir mask_dir remote_python; do
+  remote_value=${!remote_key}
+  printf -v "$remote_key" '%s' "${remote_value//\'/\'\\\'\'}"
+done
+
 scan="Dec+2654_22_09"
 nfile="${1:-0002}"
 if [[ "$nfile" =~ ^[0-9]+$ ]]; then
@@ -10,15 +21,11 @@ else
   exit 2
 fi
 
-remote_app="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/crafts_rfi_mask_manual_x11"
-input_dir="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/gzn_20260831/five_stripes_current_modules_0001_0010_v2/server_data/ZD2022_1_2/Dec+2654_22_09__20230716"
-mask_dir="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/crafts_rfi_manual_masks/Dec+2654_22_09__20230716"
-remote_python="/home/zhouyunfan/anaconda3/bin/python"
 target="${scan}:${nfile}"
 
 echo "服务器数据目录: $input_dir"
 echo "正在列出可用的 _T nfile 组..."
-ssh crafts \
+ssh "$remote_host" \
   "cd '$remote_app' && '$remote_python' crafts_tod_visual_mask.py --input-dir '$input_dir' --mask-dir '$mask_dir' --list"
 
 echo
@@ -40,5 +47,5 @@ if [[ -z "$xquartz_display" ]]; then
 fi
 export DISPLAY="$xquartz_display"
 
-exec ssh -Y crafts \
+exec ssh -Y "$remote_host" \
   "mkdir -p '$mask_dir' && cd '$remote_app' && exec env MPLBACKEND=TkAgg PYTHONUNBUFFERED=1 '$remote_python' crafts_tod_visual_mask.py '$target' --input-dir '$input_dir' --mask-dir '$mask_dir' --require-all-auto-masks --block-records 64"

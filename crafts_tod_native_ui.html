@@ -6,20 +6,21 @@
 <style>
 :root {
   color-scheme: dark;
-  --bg: #0b1016;
-  --panel: #121a24;
-  --line: #263547;
-  --text: #e8eef6;
-  --muted: #91a3b7;
-  --accent: #57c7ff;
-  --manual: #ff3d66;
-  --auto: #ff8a1e;
-  --invalid: #6c747e;
-  --good: #4bd79b;
-  --warn: #ffc857;
-  --header-height: 48px;
-  --sidebar-width: 280px;
-  --spectrum-share: 24%;
+  --bg:#101316; --panel:#1a1e23; --surface:#20252b; --control:#292e35; --hover:#343b44;
+  --plot:#10151a; --text:#f0f3f7; --muted:#b0bac6; --line:#38414b; --edge:#626e7d;
+  --accent:#8ccfff; --tint:#243e51; --manual:#ff537a; --auto:#ff8a1e; --invalid:#6c747e;
+  --good:#8ae3be; --good-bg:#1a382e; --warn:#ffd084; --warn-bg:#46361e;
+  --negative:#ffabc1; --negative-bg:#422934; --save:#16704e; --save-hover:#197f59;
+  --p0:#57c7ff; --p1:#ffb15b; --shadow:0 8px 26px #0005;
+  --header-height:56px; --sidebar-width:280px; --spectrum-share:24%;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:#eceef1; --panel:#fff; --surface:#f7f8fa; --control:#fff; --hover:#eef2f6;
+  --plot:#fcfdff; --text:#18222d; --muted:#455568; --line:#c5cdd6; --edge:#8995a2;
+  --accent:#095b92; --tint:#e4f1ff; --good:#135b40; --good-bg:#daeee2;
+  --warn:#724100; --warn-bg:#fff0cf; --negative:#932243; --negative-bg:#ffecf1;
+  --save:#126647; --save-hover:#0e533a; --p0:#005a99; --p1:#994300; --shadow:0 8px 26px #27384c22;
 }
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; margin: 0; }
@@ -33,27 +34,27 @@ body {
 button, select, input { font: inherit; }
 button, select {
   color: var(--text);
-  background: #172332;
-  border: 1px solid #31445b;
+  background: var(--control);
+  border: 1px solid var(--line);
   border-radius: 7px;
   min-height: 36px;
   padding: 6px 11px;
   cursor: pointer;
 }
 button { white-space: nowrap; }
-button:hover, select:hover { background: #1c2b3d; border-color: #6b91ba; }
+button:hover, select:hover { background: var(--hover); border-color: var(--edge); }
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible,
 #sidebarResize:focus-visible, canvas:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 button.active {
-  background: #174b68;
+  background: var(--tint);
   border-color: var(--accent);
   box-shadow: 0 0 0 1px #57c7ff33 inset;
 }
-button.primary { background: #176d55; border-color: #37b88b; font-weight: 650; }
-button.primary:hover { background: #1b8063; }
+button.primary { background: var(--save); border-color: var(--save); font-weight: 650; }
+button.primary:hover { background: var(--save-hover); }
 button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; }
 input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px; margin: 0; }
@@ -64,15 +65,18 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
   gap: 10px;
   padding: 7px 12px;
   border-bottom: 1px solid var(--line);
-  background: #0f1721;
+  background: var(--surface);
 }
 .brand { font-size: 13px; font-weight: 720; letter-spacing: .2px; white-space: nowrap; }
-.badge { padding: 3px 8px; border-radius: 999px; background: #233142; color: var(--muted); white-space: nowrap; }
-.badge.ready { background: #153d32; color: #7ee7ba; }
-.badge.loading, .badge.saving { background: #4a3918; color: #ffd978; }
+.badge { padding: 3px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); white-space: nowrap; }
+.badge.ready { background: var(--good-bg); color: var(--good); }
+.badge.loading, .badge.saving { background: var(--warn-bg); color: var(--warn); }
 .group { color: var(--muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spacer { flex: 1; }
-.coord { font-variant-numeric: tabular-nums; color: var(--accent); max-width: 32vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coord { display: grid; gap: 1px; flex: 0 1 680px; min-width: 0; max-width: 55vw; text-align: right; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.coord > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#coordMeta { font-size: 13px; font-weight: 550; color: var(--accent); }
+#coordValues { min-height: 20px; font-size: 16px; font-weight: 650; color: var(--text); }
 #toggleSidebar { color: var(--muted); background: transparent; min-height: 30px; padding: 4px 9px; }
 .layout {
   height: calc(100vh - var(--header-height));
@@ -91,9 +95,9 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
   padding: 9px;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: #3b5068 #101721;
+  scrollbar-color: var(--edge) var(--bg);
 }
-.toolbar { flex: 0 0 auto; position: relative; z-index: 6; padding: 8px; border: 1px solid #2d4157; border-radius: 10px; background: #101a25; font-size: 13px; }
+.toolbar { flex: 0 0 auto; position: relative; z-index: 6; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; }
 .toolbar-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
 .toolbar-row + .toolbar-row { margin-top: 7px; }
 .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
@@ -105,27 +109,27 @@ input[type="range"] { accent-color: var(--accent); min-width: 90px; width: 132px
 .beam-choice:has(#beamSelect[hidden]) { display: none; }
 #beamSelect { min-width: 69px; }
 .check { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); white-space: nowrap; }
-.control-group.option-controls { gap: 6px; padding: 5px 7px; border: 1px solid #3b536b; border-radius: 9px; background: #142232; }
-.option-controls .group-label { color: #b9ccde; margin: 0 3px; }
-.toggle-card { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 10px; border: 1px solid #466078; border-radius: 6px; background: #1a293a; color: #cfdeec; font-weight: 550; white-space: nowrap; cursor: pointer; user-select: none; }
+.control-group.option-controls { gap: 6px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.option-controls .group-label { color: var(--muted); margin: 0 3px; }
+.toggle-card { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 10px; border: 1px solid var(--edge); border-radius: 6px; background: var(--control); color: var(--text); font-weight: 550; white-space: nowrap; cursor: pointer; user-select: none; }
 .toggle-card input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; cursor: inherit; }
-.toggle-card:has(input:checked) { border-color: #57c7ff; background: #173e55; color: #e5f5ff; box-shadow: 0 0 0 1px #57c7ff22 inset; }
-.toggle-card.scope-toggle:has(input:checked) { border-color: #ffc857; background: #44371f; color: #ffe6b3; }
-.toggle-card:not(:has(input:disabled)):hover { border-color: #c4e7ff; filter: brightness(1.12); }
+.toggle-card:has(input:checked) { border-color: var(--accent); background: var(--tint); color: var(--text); box-shadow: 0 0 0 1px #57c7ff22 inset; }
+.toggle-card.scope-toggle:has(input:checked) { border-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+.toggle-card:not(:has(input:disabled)):hover { border-color: var(--accent); filter: brightness(1.12); }
 .toggle-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .toggle-card:has(input:disabled) { opacity: .42; cursor: not-allowed; }
-kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; border: 1px solid #627e96; border-radius: 3px; color: #bed3e5; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; vertical-align: middle; }
+kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; border: 1px solid var(--edge); border-radius: 3px; color: var(--muted); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; vertical-align: middle; }
 .toggle-card kbd { margin-left: 0; }
 .save-controls { margin-left: auto; }
 #save { min-width: 78px; }
 .edit-controls button { padding-inline: 8px; }
 .edit-controls .check { margin-left: 5px; }
-.display-options { margin-left: auto; position: relative; }
+.display-options { margin-left: 0; position: relative; }
 .display-options > summary {
   list-style: none;
-  color: #b5c8dc;
-  background: #172332;
-  border: 1px solid #31445b;
+  color: var(--muted);
+  background: var(--control);
+  border: 1px solid var(--line);
   border-radius: 6px;
   min-height: 36px;
   padding: 7px 11px;
@@ -135,42 +139,51 @@ kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; 
 }
 .display-options > summary::-webkit-details-marker { display: none; }
 .display-options > summary::after { content: " ▾"; color: var(--muted); margin-left: 5px; }
-.display-options[open] > summary { border-color: var(--accent); background: #183047; }
+.display-options[open] > summary { border-color: var(--accent); background: var(--tint); }
 .display-options[open] > summary::after { content: " ▴"; }
 .display-popover {
   position: absolute;
   top: calc(100% + 7px);
   right: 0;
-  width: min(560px, calc(100vw - 28px));
+  width: min(458px, calc(100vw - 28px));
   max-height: min(620px, 72vh);
   overflow: auto;
-  padding: 12px;
-  border: 1px solid #425a73;
+  padding: 12px 16px 14px;
+  border: 1px solid var(--edge);
   border-radius: 8px;
-  background: #14202c;
-  box-shadow: 0 12px 32px #0009;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
-.display-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.display-row + .display-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-.display-label { min-width: 75px; color: #b5c8dc; }
-.display-note { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 11px; }
-.settings-tabs { display: flex; gap: 6px; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 1px solid var(--line); }
-.settings-tabs button { flex: 1; }
-.shortcut-section { margin: 14px 0 5px; font-size: 12px; color: #c2d7e9; }
-#shortcutRows { max-height: min(300px, calc(72vh - 230px)); overflow-y: auto; margin-top: 8px; padding-right: 6px; border-block: 1px solid var(--line); scrollbar-width: thin; }
+.settings-tabs { display: grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:3px; margin-bottom:12px; border-radius:8px; background:var(--bg); }
+.settings-tabs button { min-height:31px; padding:4px; border:1px solid transparent; background:transparent; color:var(--muted); }
+.settings-tabs button[aria-selected="true"] { color:var(--text); background:var(--panel); border-color:var(--edge); box-shadow:none; }
+.settings-group + .settings-group { margin-top:9px; padding-top:9px; border-top:1px solid var(--line); }
+.setting-row { display:grid; grid-template-columns:minmax(105px, .85fr) minmax(0, 1.3fr); align-items:center; gap:8px 14px; min-height:42px; }
+.setting-row > :last-child { justify-self:start; }
+.setting-row select { min-width:125px; max-width:100%; }
+.setting-controls, .setting-slider, .stepper { display:flex; align-items:center; gap:5px; min-width:0; }
+.setting-slider { width:100%; }
+.setting-slider input { flex:1; min-width:50px; width:0; max-width:145px; }
+.setting-slider output, .stepper output { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.setting-slider output { min-width:48px; text-align:right; color:var(--muted); }
+.stepper { border:1px solid var(--line); border-radius:7px; }
+.stepper button { min-width:30px; min-height:29px; padding:3px 6px; border:0; }
+.stepper output { min-width:46px; text-align:center; }
+.display-popover .setting-row button,.display-popover .setting-row select { min-height:31px; }
+.setting-check { display:inline-flex; align-items:center; gap:8px; min-height:32px; cursor:pointer; }
+.setting-check input { width:16px; height:16px; }
+.shortcut-section { margin: 14px 0 5px; font-size: 12px; color: var(--text); }
+#shortcutRows { max-height: min(300px, calc(65vh - 110px)); overflow-y:auto; padding-right:6px; scrollbar-width:thin; }
 .shortcut-row { display: grid; grid-template-columns: minmax(100px, 1fr) 125px 52px; gap: 8px; align-items: center; padding: 4px 0; }
-.shortcut-input { width: 100%; min-height: 34px; border: 1px solid #48627b; border-radius: 5px; background: #0b151f; color: var(--text); text-align: center; cursor: pointer; }
-.shortcut-input:focus { border-color: var(--accent); background: #173449; }
+.shortcut-input { width: 100%; min-height: 34px; border: 1px solid var(--edge); border-radius: 5px; background: var(--control); color: var(--text); text-align: center; cursor: pointer; }
+.shortcut-input:focus { border-color: var(--accent); background: var(--tint); }
 .shortcut-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .settings-message { flex: 1; color: var(--good); font-size: 12px; }
-.settings-message.error, .dialog-error { color: #ff9db0; }
+.settings-message.error, .dialog-error { color: var(--negative); }
 .navigation-dialog { width: min(560px, 94vw); grid-template-rows: auto auto auto auto; }
 .navigation-actions { flex-wrap: wrap; }
 .navigation-actions .primary { min-height: 42px; }
-.navigation-actions .discard { border-color: #805963; color: #f1b8c3; background: #302027; }
-.rfi-width { min-width: 94px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
-.image-scale { min-width: 61px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
-#spectrumShareValue { color: var(--accent); min-width: 30px; font-variant-numeric: tabular-nums; }
+.navigation-actions .discard { border-color: var(--negative); color: var(--negative); background: var(--negative-bg); }
 .interaction-strip {
   display: flex;
   flex-wrap: wrap;
@@ -180,8 +193,9 @@ kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; 
   color: var(--muted);
   font-size: 11px;
 }
-#modeHint { color: #b9d8ec; }
-#viewStatus:empty { display: none; }
+#modeHint { color: var(--muted); }
+#viewStatus { position:absolute; right:6px; top:3px; font-size:10px; color:var(--accent); background:var(--plot); pointer-events:none; }
+#viewStatus:empty, #viewStatus[data-clear="true"] { opacity:0; }
 .gesture-hint { margin-left: auto; }
 .plot-stack {
   flex: 1 0 520px;
@@ -191,18 +205,38 @@ kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; 
   gap: 8px;
   min-width: 0;
 }
-.plots { display: grid; grid-template-rows: repeat(2, minmax(144px, 1fr)); gap: 8px; min-width: 0; min-height: 0; }
+.plots { position:relative; display: grid; grid-template-rows: repeat(2, minmax(144px, 1fr)); gap: 8px; min-width: 0; min-height: 0; }
+.plot-pair { display:grid; grid-template-columns:minmax(0,1fr) 10px min(var(--band-width,178px),32%); min-width:0; min-height:0; }
+.band-hidden .plot-pair { grid-template-columns:minmax(0,1fr); }
+.band-hidden .band-gap, .band-hidden .band-card, .band-hidden .band-grip, .band-hidden .record-card { display:none; }
+.band-card,.record-card { position:relative; min-width:0; min-height:0; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:var(--plot); }
+.band-card canvas { position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+.band-loading .band-card canvas { visibility:hidden; }
+.band-grip { position:absolute; right:min(var(--band-width,178px),32%); top:0; bottom:0; width:10px; z-index:2; cursor:col-resize; touch-action:none; }
+.band-grip::after { content:""; position:absolute; left:50%; top:50%; width:3px; height:30px; border-radius:3px; background:var(--edge); transform:translate(-50%,-50%); }
+.band-grip:hover::after,.band-grip:focus-visible::after { background:var(--accent); }
+#bandToggle { margin-left:auto; padding:5px 10px; min-height:32px; font-size:12px; }
+#bandToggle[aria-pressed="true"] { color:var(--accent); background:var(--tint); border-color:var(--accent); }
+.record-card { display:flex; flex-direction:column; justify-content:center; gap:6px; padding:8px 12px; font-variant-numeric:tabular-nums; }
+.record-heading { display:flex; align-items:baseline; justify-content:space-between; gap:3px; flex-wrap:wrap; }
+.record-card small { color:var(--muted); font-size:10px; }
+.record-card strong { font-size:16px; font-weight:600; }
+.record-values { display:grid; gap:5px; font-size:12px; line-height:1.25; }
+.record-values>div { display:grid; grid-template-columns:auto 1fr; gap:2px 4px; padding-top:4px; border-top:1px solid var(--line); }
+.record-values output { text-align:right; font-weight:600; }
+.record-values small { grid-column:1/-1; text-align:right; }
+.resizing-band { cursor:col-resize; user-select:none; }
 .plot, .spectrum {
   position: relative;
   min-width: 0;
   min-height: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #0a0f15;
+  background: var(--plot);
   overflow: hidden;
 }
 .plot canvas, .spectrum canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-.plot-title { position: absolute; top: 4px; left: 67px; background: #0a0f15dc; padding: 1px 5px; border-radius: 4px; pointer-events: none; font-size: 11px; }
+.plot-title { position: absolute; top: 4px; left: 67px; background: var(--plot); padding: 1px 5px; border-radius: 4px; pointer-events: none; font-size: 11px; }
 .spectrum canvas { cursor: crosshair; }
 .spectrum-legend {
   position: absolute;
@@ -212,39 +246,39 @@ kbd { display: inline-block; min-width: 19px; margin-left: 5px; padding: 0 4px; 
   align-items: center;
   gap: 12px;
   padding: 1px 5px;
-  background: #0a0f15e8;
+  background: var(--plot);
   border-radius: 3px;
   pointer-events: none;
   font-size: 11px;
 }
 .legend-item { display: inline-flex; gap: 5px; align-items: center; }
 .legend-line { display: inline-block; width: 16px; height: 2px; background: currentColor; }
-.legend-pol0 { color: #57c7ff; }
-.legend-pol1 { color: #ffb15b; }
+.legend-pol0 { color: var(--p0); }
+.legend-pol1 { color: var(--p1); }
 .sidebar-resize { position: relative; min-height: 0; cursor: col-resize; touch-action: none; background: var(--bg); z-index: 7; }
-.sidebar-resize::after { content: ""; position: absolute; top: 50%; left: 2px; width: 3px; height: 36px; border-radius: 2px; background: #34485f; transform: translateY(-50%); }
+.sidebar-resize::after { content: ""; position: absolute; top: 50%; left: 2px; width: 3px; height: 36px; border-radius: 2px; background: var(--edge); transform: translateY(-50%); }
 .sidebar-resize:hover::after, .sidebar-resize:focus-visible::after { background: var(--accent); }
 body.resizing-sidebar { cursor: col-resize; user-select: none; }
 body.resizing-sidebar canvas { pointer-events: none; }
 .side { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--line); background: var(--panel); }
 .side > section { padding: 11px; border-bottom: 1px solid var(--line); }
-.section-heading { font-weight: 650; color: #d3e1ef; }
+.section-heading { font-weight: 650; color: var(--text); }
 .status { color: var(--muted); margin-top: 7px; overflow-wrap: anywhere; }
 .legend { display: grid; grid-template-columns: 11px 1fr; gap: 7px 8px; color: var(--muted); font-size: 11px; align-items: start; }
 .swatch { height: 11px; border-radius: 2px; margin-top: 2px; }
 .log-section { min-height: 0; padding: 0 !important; display: flex; flex-direction: column; border-bottom: 0 !important; }
 .log-heading { padding: 10px 11px 0; font-size: 11px; color: var(--muted); }
-.log { flex: 1; min-height: 0; margin: 0; padding: 8px 11px 11px; overflow: auto; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #aebed0; white-space: pre-wrap; overflow-wrap: anywhere; scrollbar-width: thin; }
+.log { flex: 1; min-height: 0; margin: 0; padding: 8px 11px 11px; overflow: auto; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; scrollbar-width: thin; }
 body.sidebar-collapsed .layout { grid-template-columns: minmax(0, 1fr); }
 body.sidebar-collapsed .side, body.sidebar-collapsed .sidebar-resize { display: none; }
-body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
-.loading-cover { position: absolute; inset: 0; display: grid; place-items: center; background: #0b1016dd; z-index: 4; text-align: center; }
-.spinner { width: 28px; height: 28px; border: 3px solid #294057; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: auto auto 8px; }
+body.sidebar-collapsed #toggleSidebar { border-color: var(--edge); color: var(--muted); }
+.loading-cover { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 4; text-align: center; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: auto auto 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: calc(100vw - 24px); background: #192536; border: 1px solid #44617f; border-radius: 7px; padding: 8px 13px; z-index: 30; box-shadow: 0 8px 30px #0008; }
-.toast.error { border-color: #b54a5f; color: #ff9db0; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: calc(100vw - 24px); background: var(--surface); border: 1px solid var(--edge); border-radius: 7px; padding: 8px 13px; z-index: 30; box-shadow: 0 8px 30px #0008; }
+.toast.error { border-color: var(--negative); color: var(--negative); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #05080dbb; padding: 20px; }
-.save-dialog { width: min(620px, 94vw); max-height: 88vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; padding: 18px; background: #121a24; border: 1px solid #3b526c; border-radius: 10px; box-shadow: 0 20px 70px #000b; }
+.save-dialog { width: min(620px, 94vw); max-height: 88vh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 20px 70px #000b; }
 .save-dialog h2 { font-size: 18px; margin: 0; }
 .save-dialog p { margin: 0; color: var(--muted); }
 .save-table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 7px; }
@@ -261,12 +295,13 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
 }
 @media (max-width: 760px) {
   .brand { display: none; }
-  .coord { max-width: 31vw; }
+  .coord { max-width: 70vw; }
+  #coordValues { font-size: 14px; }
   .main { padding: 7px; }
   .layout { grid-template-columns: minmax(0, 1fr) 8px min(var(--sidebar-width), 38vw); }
   .control-group + .control-group { border-left: 0; padding-left: 0; }
   .display-options { margin-left: 0; }
-  .display-popover { left: 0; right: auto; }
+  .display-popover { position:fixed; left:10px; right:auto; top:calc(var(--header-height) + 8px); width:min(458px,calc(100vw - 20px)); max-height:calc(100dvh - var(--header-height) - 20px); }
   .interaction-strip { font-size: 10px; }
 }
 @media (max-height: 650px) {
@@ -277,23 +312,39 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.8s; } }
 
 .status{white-space:pre-line}.spectrum-legend{max-width:62%;font-size:10px;gap:8px}.spectrum-legend span{white-space:nowrap}
+
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
+.brand { letter-spacing:.035em; }
+.brand span { font-weight:500; letter-spacing:0; color:var(--muted); }
+.toolbar,.display-popover,.save-dialog { background:var(--panel); }
+.toolbar { padding:8px 10px; }
+.control-group.option-controls,.edit-controls { padding:3px; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:9px; }
+.edit-controls button,.toggle-card { border:1px solid transparent; background:transparent; min-height:32px; }
+.edit-controls button.active,.toggle-card:has(input:checked) { border-color:var(--edge); background:var(--tint); color:var(--text); box-shadow:none; }
+button.primary { color:white; }
+kbd { background:var(--surface); color:var(--muted); }
+#themeMode { min-height:30px; font-size:12px; }
+#bandManual:not([hidden]) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:5px; padding:0 0 5px; }
+#bandManual input { width:83px; max-width:22vw; padding:6px; border:1px solid var(--edge); border-radius:5px; color:var(--text); background:var(--control); }
+.band-grip:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
 </style>
 </head>
 <body>
 <header class="app-header">
-  <div class="brand">CRAFTS Manual RFI Mask</div>
+  <div class="brand">CRAFTS <span>RFI 标注</span></div>
   <span id="badge" class="badge loading">starting</span>
   <div id="group" class="group">等待服务器…</div>
   <div class="spacer"></div>
-  <span class="coord" id="coord">—</span>
-  <button id="toggleSidebar" type="button" aria-controls="taskSidebar" aria-expanded="true" title="展开或收起任务状态与日志"><span id="sidebarLabel">侧栏</span><kbd id="key-sidebar" aria-hidden="true" hidden></kbd></button>
+  <span class="coord" id="coord"><span id="coordMeta">移到图中查看采样值</span><span id="coordValues">—</span></span>
+
 </header>
 <div class="layout">
   <main class="main" aria-label="RFI 标注工作区">
     <div class="toolbar">
       <div class="toolbar-row toolbar-primary">
         <div class="control-group view-controls">
-          <label class="view-choice" for="viewMode">查看</label>
+          <label class="sr-only" for="viewMode">查看视图</label>
           <select id="viewMode" aria-label="查看视图">
             <option value="mean">19-beam Mean</option>
             <option value="single">Single beam</option>
@@ -308,8 +359,7 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
           <button id="next"><span>下一个</span><kbd id="key-next" aria-hidden="true" hidden></kbd></button>
         </div>
         <div class="control-group option-controls" role="group" aria-label="显示与标记">
-          <span class="group-label">显示与标记</span>
-          <label class="toggle-card" title="关闭后，两幅瀑布图和平均谱均不使用自动 mask，并隐藏自动覆盖层；人工标记保留。"><input id="applyAuto" type="checkbox" aria-label="使用自动 mask" aria-keyshortcuts="A" checked><span>使用自动 mask</span><kbd id="key-applyAuto" aria-hidden="true"></kbd></label>
+          <label class="toggle-card" title="控制瀑布图、频谱和全频带均值的自动 mask。"><input id="applyAuto" type="checkbox" aria-label="使用自动 mask" aria-keyshortcuts="A" checked><span>使用自动 mask</span><kbd id="key-applyAuto" aria-hidden="true"></kbd></label>
           <label class="toggle-card" title="仅控制自动标记的覆盖层显示，需要先启用自动 mask。"><input id="showAuto" type="checkbox" aria-label="显示自动标记" aria-keyshortcuts="V" checked><span>显示自动标记</span><kbd id="key-showAuto" aria-hidden="true"></kbd></label>
           <label class="toggle-card scope-toggle" title="开启后，手动标记同时作用于 Pol 0 和 Pol 1；不会改变已有标记。"><input id="both" type="checkbox" aria-label="双偏振" aria-keyshortcuts="P"><span>双偏振</span><kbd id="key-both" aria-hidden="true"></kbd></label>
         </div>
@@ -319,7 +369,6 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
       </div>
       <div class="toolbar-row toolbar-secondary">
         <div class="control-group edit-controls" aria-label="标记工具">
-          <span class="group-label">标记</span>
           <button id="toolFrequency" data-mode="frequency" class="active"><span>频率</span><kbd id="key-frequency" aria-hidden="true" hidden></kbd></button>
           <button id="toolTime" data-mode="time"><span>时间</span><kbd id="key-time" aria-hidden="true" hidden></kbd></button>
           <button id="toolBox" data-mode="box"><span>矩形</span><kbd id="key-box" aria-hidden="true" hidden></kbd></button>
@@ -332,93 +381,148 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
           <button id="viewBack" disabled title="返回上一次缩放或平移的范围，不撤销 mask"><span>返回视图</span><kbd id="key-viewBack" aria-hidden="true" hidden></kbd></button>
           <button id="reset"><span>重置视图</span><kbd id="key-reset" aria-hidden="true" hidden></kbd></button>
         </div>
+        <span id="modeHint" class="sr-only" aria-live="polite">当前模式：频率标记</span>
+        <button id="bandToggle" type="button" aria-pressed="true" aria-controls="band0 band1">全频带均值</button>
         <details id="displayOptions" class="display-options">
           <summary id="settingsToggle">设置 <kbd id="key-settings" aria-hidden="true"></kbd></summary>
           <div class="display-popover">
             <div class="settings-tabs" role="tablist" aria-label="设置分类">
-              <button id="displayTab" role="tab" aria-selected="true" aria-controls="displayPane" class="active">显示</button>
-              <button id="shortcutsTab" role="tab" aria-selected="false" aria-controls="shortcutsPane">快捷键</button>
+              <button id="displayTab" role="tab" aria-selected="true" aria-controls="displayPane" class="active">图表</button>
+              <button id="markTab" role="tab" aria-selected="false" aria-controls="markPane" tabindex="-1">标记</button>
+              <button id="layoutTab" role="tab" aria-selected="false" aria-controls="layoutPane" tabindex="-1">布局</button>
+              <button id="shortcutsTab" role="tab" aria-selected="false" aria-controls="shortcutsPane" tabindex="-1">快捷键</button>
             </div>
             <div id="displayPane" role="tabpanel" aria-labelledby="displayTab">
-            <div class="display-row">
-              <span class="display-label">范围缩放</span>
-              <button id="toolZoomFrequency" data-mode="zoom-frequency"><span>频率放大</span><kbd id="key-zoom-frequency" aria-hidden="true" hidden></kbd></button>
-              <button id="toolZoomTime" data-mode="zoom-time"><span>时间放大</span><kbd id="key-zoom-time" aria-hidden="true" hidden></kbd></button>
-              <p class="display-note">选择工具后在图中拖动；仅调整查看范围，不添加或删除 mask。</p>
+              <div class="settings-group">
+                <label class="setting-check" title="用未标记的有效样本调整显示范围，手动固定值优先。"><input id="followMask" type="checkbox" checked>随 mask 调整显示范围</label>
+                <div class="setting-row">
+                  <span class="setting-label" id="waterfallScaleLabel">瀑布图色阶</span>
+                  <div class="setting-controls" role="group" aria-labelledby="waterfallScaleLabel">
+                    <button id="contrast"><span id="contrastLabel">对比度 1/4</span><kbd id="key-contrast" aria-hidden="true" hidden></kbd></button>
+                    <button id="colorAuto" title="恢复两个偏振的自动色标"><span>恢复自动</span><kbd id="key-colorAuto" aria-hidden="true" hidden></kbd></button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <label for="spectrumY">底部频谱 Y 轴</label>
+                  <select id="spectrumY"><option value="strong">强抗 RFI</option><option value="robust">抗 RFI</option><option value="percentile">99% 数据</option><option value="full">完整范围</option></select>
+                </div>
+                <div class="setting-row">
+                  <label for="bandRange">侧图温度范围</label>
+                  <select id="bandRange"><option value="full">完整范围</option><option value="percentile">99% 数据</option><option value="robust">抗 RFI</option><option value="strong">强抗 RFI</option><option value="manual">固定 K 范围</option></select>
+                </div>
+                <div id="bandManual" hidden>
+                  <input id="bandLow" type="number" step="any" aria-label="温度下限 K" placeholder="下限 K">
+                  <span aria-hidden="true">–</span>
+                  <input id="bandHigh" type="number" step="any" aria-label="温度上限 K" placeholder="上限 K">
+                  <button id="applyBandRange">应用</button>
+                </div>
+              </div>
+              <div class="settings-group setting-row">
+                <span id="dpiLabel">瀑布图分辨率</span>
+                <div class="stepper" role="group" aria-labelledby="dpiLabel">
+                  <button id="dpiDown" aria-label="降低图像分辨率" title="降低图像分辨率">−<kbd id="key-dpiDown" aria-hidden="true" hidden></kbd></button>
+                  <output id="dpiScale">1×</output>
+                  <button id="dpiUp" aria-label="提高图像分辨率" title="提高图像分辨率">+<kbd id="key-dpiUp" aria-hidden="true" hidden></kbd></button>
+                </div>
+              </div>
             </div>
-            <div class="display-row">
-              <span class="display-label">瀑布图色阶</span>
-              <button id="contrast"><span id="contrastLabel">对比度 1/4</span><kbd id="key-contrast" aria-hidden="true" hidden></kbd></button>
-              <button id="colorAuto" title="清除 Pol0/Pol1 手动色标范围"><span>色标自动</span><kbd id="key-colorAuto" aria-hidden="true" hidden></kbd></button>
-              <p class="display-note">也可拖动右侧色标箭头，分别调整两个偏振的亮度范围。</p>
+            <div id="markPane" role="tabpanel" aria-labelledby="markTab" hidden>
+              <div class="settings-group">
+                <div class="setting-row">
+                  <span id="zoomLabel">拖选放大</span>
+                  <div class="setting-controls" role="group" aria-labelledby="zoomLabel">
+                    <button id="toolZoomFrequency" data-mode="zoom-frequency" aria-label="频率放大" title="沿频率轴放大"><span>频率</span><kbd id="key-zoom-frequency" aria-hidden="true" hidden></kbd></button>
+                    <button id="toolZoomTime" data-mode="zoom-time" aria-label="时间放大" title="沿 Record 轴放大"><span>时间</span><kbd id="key-zoom-time" aria-hidden="true" hidden></kbd></button>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <label for="dragThreshold">防误触距离</label>
+                  <div class="setting-slider"><input id="dragThreshold" type="range" min="1" max="12" step="1" value="3"><output id="dragThresholdValue" for="dragThreshold">3 px</output></div>
+                </div>
+              </div>
+              <div class="settings-group">
+                <label class="setting-check" title="放大到可分辨原始 Record 或 channel 时绘制格线"><input id="cellGrid" type="checkbox" checked>显示采样格线</label>
+                <div class="setting-row">
+                  <span id="overlayWidthLabel">自动标记线宽</span>
+                  <div class="stepper" role="group" aria-labelledby="overlayWidthLabel">
+                    <button id="rfiThin" aria-label="减小自动标记显示宽度" title="减小自动标记显示宽度">−<kbd id="key-rfiThin" aria-hidden="true" hidden></kbd></button>
+                    <output id="rfiWidth">3 px</output>
+                    <button id="rfiThick" aria-label="增大自动标记显示宽度" title="增大自动标记显示宽度">+<kbd id="key-rfiThick" aria-hidden="true" hidden></kbd></button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="display-row">
-              <span class="display-label">图像分辨率</span>
-              <button id="dpiDown" title="降低瀑布图传输分辨率，提高响应速度"><span>DPI −</span><kbd id="key-dpiDown" aria-hidden="true" hidden></kbd></button>
-              <span id="dpiScale" class="image-scale">DPI 1×</span>
-              <button id="dpiUp" title="提高瀑布图传输分辨率，增强细节"><span>DPI ＋</span><kbd id="key-dpiUp" aria-hidden="true" hidden></kbd></button>
-            </div>
-            <div class="display-row">
-              <span class="display-label">自动 RFI 宽度</span>
-              <button id="rfiThin" title="减小自动 RFI 显示宽度"><span>RFI −</span><kbd id="key-rfiThin" aria-hidden="true" hidden></kbd></button>
-              <span id="rfiWidth" class="rfi-width">宽度 3 px</span>
-              <button id="rfiThick" title="增加自动 RFI 显示宽度"><span>RFI ＋</span><kbd id="key-rfiThick" aria-hidden="true" hidden></kbd></button>
-              <p class="display-note">仅改变自动 RFI 的显示宽度，不改变保存的 manual mask。</p>
-            </div>
-            <div class="display-row">
-              <label class="display-label" for="spectrumY">频谱 Y 轴</label>
-              <select id="spectrumY" aria-label="Mean Spectrum Y轴范围">
-                <option value="strong">强抗RFI</option>
-                <option value="robust">抗RFI</option>
-                <option value="percentile">99%数据</option>
-                <option value="full">完整范围</option>
-              </select>
-              <p class="display-note">仅调整频谱纵轴的显示范围，不会增加 mask 或删除数据。</p>
-            </div>
-            <div class="display-row">
-              <label class="display-label" for="spectrumShare">频谱高度</label>
-              <input id="spectrumShare" type="range" min="18" max="40" step="1" value="24" aria-describedby="spectrumShareValue">
-              <output id="spectrumShareValue" for="spectrumShare">24%</output>
-              <p class="display-note">调整左侧三个图的相对高度；两个瀑布图保持等高。</p>
-            </div>
+            <div id="layoutPane" role="tabpanel" aria-labelledby="layoutTab" hidden>
+              <div class="settings-group">
+                <div class="setting-row">
+                  <label for="spectrumShare">底部频谱高度</label>
+                  <div class="setting-slider"><input id="spectrumShare" type="range" min="18" max="40" step="1" value="24"><output id="spectrumShareValue" for="spectrumShare">24%</output></div>
+                </div>
+                <div class="setting-row">
+                  <label for="bandWidth">均值侧图宽度</label>
+                  <div class="setting-slider"><input id="bandWidth" type="range" min="104" max="340" step="1" value="178"><output id="bandWidthText" for="bandWidth">178 px</output></div>
+                </div>
+                <div class="setting-row">
+                  <span>任务侧栏</span>
+                  <button id="toggleSidebar" type="button" aria-controls="taskSidebar" aria-expanded="true"><span id="sidebarLabel">收起侧栏</span><kbd id="key-sidebar" aria-hidden="true" hidden></kbd></button>
+                </div>
+              </div>
+              <div class="settings-group setting-row">
+                <label for="themeMode">外观</label>
+                <select id="themeMode"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select>
+              </div>
             </div>
             <div id="shortcutsPane" role="tabpanel" aria-labelledby="shortcutsTab" hidden>
-              <p class="display-note">点击按键框，再按新键。支持字母、数字、常用标点及 Shift 组合；Backspace / Delete 清空，Esc 取消。设置自动保存在当前浏览器中。</p>
               <div id="shortcutRows"></div>
               <div class="shortcut-footer">
                 <button id="resetShortcuts">恢复默认快捷键</button>
                 <span id="shortcutMessage" class="settings-message" role="status" aria-live="polite"></span>
               </div>
-              <p class="display-note">固定操作：Esc 取消，Tab 切换焦点；Option / Alt + 拖动或滚轮缩放频率，Shift + 拖动或滚轮缩放时间。Command / Ctrl 组合键保留给浏览器。</p>
             </div>
           </div>
         </details>
       </div>
-      <div class="interaction-strip">
-        <span id="modeHint">当前模式：频率标记</span>
-        <span id="viewStatus" aria-live="polite"></span>
-        <span class="gesture-hint">缩放：Option / Alt + 拖动频率 · Shift + 拖动 Record · 相同按键 + 滚轮</span>
-      </div>
     </div>
     <div class="plot-stack">
       <div class="plots">
+        <div id="bandGrip" class="band-grip" role="separator" tabindex="0" aria-orientation="vertical" aria-label="调整两幅均值侧图宽度" aria-controls="band0 band1" aria-valuemin="104" aria-valuemax="340"></div>
+        <div class="plot-pair">
         <div class="plot">
           <canvas id="pol0" aria-label="Pol 0 时频瀑布图" tabindex="0"></canvas>
+          <span id="viewStatus" aria-live="polite"></span>
           <div id="plotTitle0" class="plot-title">Pol 0 · 19-beam Mean</div>
           <div class="loading-cover" id="cover0"><div><div class="spinner"></div><span>载入数据…</span></div></div>
         </div>
+        <div class="band-gap" aria-hidden="true"></div>
+        <div class="band-card"><canvas id="band0" tabindex="0" aria-label="Pol 0 全频带均值与 Record" title="单击定位，纵向拖选标记时间，Shift + 拖选放大"></canvas></div>
+        </div>
+        <div class="plot-pair">
         <div class="plot">
           <canvas id="pol1" aria-label="Pol 1 时频瀑布图" tabindex="0"></canvas>
           <div id="plotTitle1" class="plot-title">Pol 1 · 19-beam Mean</div>
           <div class="loading-cover" id="cover1"><div><div class="spinner"></div><span>载入数据…</span></div></div>
         </div>
+        <div class="band-gap" aria-hidden="true"></div>
+        <div class="band-card"><canvas id="band1" tabindex="0" aria-label="Pol 1 全频带均值与 Record" title="单击定位，纵向拖选标记时间，Shift + 拖选放大"></canvas></div>
+        </div>
       </div>
+      <div class="plot-pair">
       <div class="spectrum">
         <canvas id="spectrum" aria-label="双偏振平均频谱" tabindex="0"></canvas>
         <div id="spectrumLegend" class="spectrum-legend" aria-label="频谱偏振图例">
           <span class="legend-item legend-pol0"><span class="legend-line"></span>Pol 0</span>
           <span class="legend-item legend-pol1"><span class="legend-line"></span>Pol 1</span>
         </div>
+      </div>
+      <div class="band-gap" aria-hidden="true"></div>
+      <div class="record-card">
+        <div class="record-heading"><small>定位 Record</small><strong id="pinnedRecord">—</strong></div>
+        <small id="pinnedHint">单击右侧曲线定位</small>
+        <div class="record-values" id="pinnedValues" hidden>
+          <div><span class="legend-pol0">Pol 0</span><output id="pinnedK0">—</output><small id="pinnedN0"></small></div>
+          <div><span class="legend-pol1">Pol 1</span><output id="pinnedK1">—</output><small id="pinnedN1"></small></div>
+        </div>
+      </div>
       </div>
     </div>
   </main>
@@ -427,7 +531,7 @@ body.sidebar-collapsed #toggleSidebar { border-color: #425d76; color: #bcd9ed; }
     <section>
       <div class="section-heading">当前任务</div>
       <div id="summary" class="status">连接服务器中…</div>
-      <div id="autoMaskStatus" class="status" aria-live="polite">自动 mask：三图已启用</div>
+      <div id="autoMaskStatus" class="sr-only" aria-live="polite">自动 mask 已启用</div>
     </section>
     <section>
       <div class="legend">
@@ -541,11 +645,38 @@ function setShortcutBinding(id,binding){
   if(conflict){shortcutMessage(`${shortcutLabel(binding)} 已用于“${conflict.label}”，请先清空该绑定。`,true);return false}
   keyBindings[id]=binding;persistShortcuts();return true;
 }
-function setSettingsTab(name){
-  const shortcuts=name==='shortcuts';
-  $('#displayPane').hidden=shortcuts;$('#shortcutsPane').hidden=!shortcuts;
-  $('#displayTab').classList.toggle('active',!shortcuts);$('#shortcutsTab').classList.toggle('active',shortcuts);
-  $('#displayTab').setAttribute('aria-selected',String(!shortcuts));$('#shortcutsTab').setAttribute('aria-selected',String(shortcuts));
+const settingsPages = ['display', 'mark', 'layout', 'shortcuts'];
+
+function setSettingsTab(name, focus = false) {
+  for (const page of settingsPages) {
+    const active = page === name;
+    const tab = $('#' + page + 'Tab');
+    $('#' + page + 'Pane').hidden = !active;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    if (active && focus) tab.focus();
+  }
+}
+
+function initSettingsTabs() {
+  for (const [index, page] of settingsPages.entries()) {
+    const tab = $('#' + page + 'Tab');
+    tab.onclick = () => setSettingsTab(page);
+    tab.onkeydown = event => {
+      let next;
+      switch (event.key) {
+        case 'ArrowRight': next = (index + 1) % settingsPages.length; break;
+        case 'ArrowLeft': next = (index + settingsPages.length - 1) % settingsPages.length; break;
+        case 'Home': next = 0; break;
+        case 'End': next = settingsPages.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setSettingsTab(settingsPages[next], true);
+    };
+  }
 }
 function initShortcuts(){
   try{
@@ -560,7 +691,7 @@ function initShortcuts(){
     if(section!==item.section){section=item.section;const heading=document.createElement('h3');heading.className='shortcut-section';heading.textContent=section;$('#shortcutRows').appendChild(heading)}
     const row=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input'),clear=document.createElement('button');
     row.className='shortcut-row';input.id='binding-'+item.id;input.className='shortcut-input';input.readOnly=true;input.setAttribute('aria-label',item.label+'快捷键');label.htmlFor=input.id;label.textContent=item.label;
-    input.onfocus=()=>shortcutMessage('请按新键；Backspace 清空，Esc 取消。');
+    input.onfocus=()=>shortcutMessage('按新键绑定，Backspace 清空，Esc 退出。');
     input.onkeydown=event=>{
       if(event.key==='Tab')return;
       event.preventDefault();event.stopPropagation();
@@ -573,40 +704,409 @@ function initShortcuts(){
     clear.textContent='清空';clear.setAttribute('aria-label','清空'+item.label+'快捷键');clear.onclick=()=>setShortcutBinding(item.id,'');
     shortcutFields[item.id]=input;row.appendChild(label);row.appendChild(input);row.appendChild(clear);$('#shortcutRows').appendChild(row);
   }
-  $('#displayTab').onclick=()=>setSettingsTab('display');$('#shortcutsTab').onclick=()=>setSettingsTab('shortcuts');
   $('#resetShortcuts').onclick=()=>{keyBindings=Object.fromEntries(SHORTCUTS.map(a=>[a.id,a.key]));persistShortcuts()};
   refreshShortcutLabels();
 }
 for(let beam=1;beam<=19;beam++){const option=document.createElement('option');option.value=`M${String(beam).padStart(2,'0')}`;option.textContent=option.value;$('#beamSelect').appendChild(option)}
 function toast(msg,error=false){const d=document.createElement('div');d.className='toast'+(error?' error':'');d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
 function nice(v,n=3){return Number(v).toFixed(n)}
+function frequencyTick(value,view=app.view){const step=(view.f1-view.f0)/5,digits=Math.max(1,Math.min(6,Math.ceil(-Math.log10(step))+1));return nice(value,digits)}
 function fitCanvas(c){const dpr=Math.min(devicePixelRatio||1,2),r=c.getBoundingClientRect(),w=Math.max(1,Math.floor(r.width*dpr)),h=Math.max(1,Math.floor(r.height*dpr));if(c.width!==w||c.height!==h){c.width=w;c.height=h}return {ctx:c.getContext('2d'),w,h,dpr}}
 function plotRect(c){const {w,h,dpr}=fitCanvas(c);return{x:PAD.l*dpr,y:PAD.t*dpr,w:w-(PAD.l+PAD.r)*dpr,h:h-(PAD.t+PAD.b)*dpr,dpr}}
 function dataAt(c,event){const r=c.getBoundingClientRect(),p=plotRect(c),sx=c.width/r.width,sy=c.height/r.height,x=(event.clientX-r.left)*sx,y=(event.clientY-r.top)*sy;return{f:app.view.f0+(x-p.x)/p.w*(app.view.f1-app.view.f0),t:app.view.t1-(y-p.y)/p.h*(app.view.t1-app.view.t0),inside:x>=p.x&&x<=p.x+p.w&&y>=p.y&&y<=p.y+p.h,x,y}}
-function xy(c,f,t){const p=plotRect(c);return{x:p.x+(f-app.view.f0)/(app.view.f1-app.view.f0)*p.w,y:p.y+(app.view.t1-t)/(app.view.t1-app.view.t0)*p.h}}
-function drawAxes(c,ctx,p,pol){ctx.strokeStyle='#304257';ctx.lineWidth=p.dpr;ctx.strokeRect(p.x,p.y,p.w,p.h);ctx.font=`${11*p.dpr}px system-ui`;ctx.fillStyle='#90a4b9';ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=5;i++){const x=p.x+p.w*i/5,f=app.view.f0+(app.view.f1-app.view.f0)*i/5;ctx.beginPath();ctx.moveTo(x,p.y+p.h);ctx.lineTo(x,p.y+p.h+4*p.dpr);ctx.stroke();ctx.fillText(nice(f,1),x,p.y+p.h+6*p.dpr)}ctx.textAlign='right';ctx.textBaseline='middle';for(let i=0;i<=4;i++){const y=p.y+p.h*i/4,t=app.view.t1-(app.view.t1-app.view.t0)*i/4;ctx.fillText(String(Math.round(t)),p.x-7*p.dpr,y)}ctx.save();ctx.translate(14*p.dpr,p.y+p.h/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.fillText('Record',0,0);ctx.restore();if(pol===1){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('Frequency (MHz)',p.x+p.w/2,c.height-1*p.dpr)}}
+function xy(c,f,t,p=plotRect(c)){return{x:p.x+(f-app.view.f0)/(app.view.f1-app.view.f0)*p.w,y:p.y+(app.view.t1-t)/(app.view.t1-app.view.t0)*p.h}}
+function drawAxes(c,ctx,p,pol){ctx.strokeStyle=chart.frame;ctx.lineWidth=p.dpr;ctx.strokeRect(p.x,p.y,p.w,p.h);ctx.font=`${11*p.dpr}px system-ui`;ctx.fillStyle=chart.ink;ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=5;i++){const x=p.x+p.w*i/5,f=app.view.f0+(app.view.f1-app.view.f0)*i/5;ctx.beginPath();ctx.moveTo(x,p.y+p.h);ctx.lineTo(x,p.y+p.h+4*p.dpr);ctx.stroke();ctx.fillText(frequencyTick(f),x,p.y+p.h+6*p.dpr)}ctx.textAlign='right';ctx.textBaseline='middle';for(let i=0;i<=4;i++){const y=p.y+p.h*i/4,t=app.view.t1-(app.view.t1-app.view.t0)*i/4;ctx.fillText(String(Math.round(t)),p.x-7*p.dpr,y)}ctx.save();ctx.translate(14*p.dpr,p.y+p.h/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.fillText('Record',0,0);ctx.restore();if(pol===1){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('Frequency (MHz)',p.x+p.w/2,c.height-1*p.dpr)}}
 function colorbarValues(pol){const base=app.autoLimits[pol],selected=app.colorRanges[pol]||app.limits[pol];return{base,selected}}
 function colorbarY(p,value,base){const span=base[1]-base[0]||1;return p.y+(base[1]-value)/span*p.h}
-function drawColorbar(ctx,p,pol){const x=p.x+p.w+13*p.dpr,w=12*p.dpr,g=ctx.createLinearGradient(0,p.y+p.h,0,p.y);g.addColorStop(0,'rgb(68,1,84)');g.addColorStop(.25,'rgb(59,82,139)');g.addColorStop(.5,'rgb(33,145,140)');g.addColorStop(.75,'rgb(92,200,99)');g.addColorStop(1,'rgb(253,231,37)');ctx.fillStyle=g;ctx.fillRect(x,p.y,w,p.h);ctx.strokeStyle='#536980';ctx.strokeRect(x,p.y,w,p.h);const {base,selected}=colorbarValues(pol),[lo,hi]=selected,mid=(lo+hi)/2;ctx.fillStyle='#91a3b7';ctx.font=`${10*p.dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(nice(hi,3),x+w+5*p.dpr,p.y);ctx.fillText(nice(mid,3),x+w+5*p.dpr,p.y+p.h/2);ctx.fillText(nice(lo,3),x+w+5*p.dpr,p.y+p.h);ctx.textBaseline='top';ctx.fillText('K',x,p.y+3*p.dpr);for(const [value,color] of [[hi,'#fff2a8'],[lo,'#7edcff']]){const y=Math.max(p.y,Math.min(p.y+p.h,colorbarY(p,value,base)));ctx.beginPath();ctx.moveTo(x-2*p.dpr,y);ctx.lineTo(x-11*p.dpr,y-6*p.dpr);ctx.lineTo(x-11*p.dpr,y+6*p.dpr);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#071018';ctx.lineWidth=p.dpr;ctx.stroke()}}
-function colorbarHit(c,event,pol){const r=c.getBoundingClientRect(),p=plotRect(c),sx=c.width/r.width,sy=c.height/r.height,x=(event.clientX-r.left)*sx,y=(event.clientY-r.top)*sy,barX=p.x+p.w+13*p.dpr,barW=12*p.dpr;if(x<barX-15*p.dpr||x>barX+barW+3*p.dpr||y<p.y-8*p.dpr||y>p.y+p.h+8*p.dpr)return null;const {base,selected}=colorbarValues(pol),loY=colorbarY(p,selected[0],base),hiY=colorbarY(p,selected[1],base);return{handle:Math.abs(y-loY)<Math.abs(y-hiY)?'lo':'hi',base:[...base]}}
+function drawColorbar(ctx,p,pol){
+  if(app.noScaleSamples?.[pol]&&!app.colorRanges[pol]){
+    ctx.fillStyle=chart.ink;ctx.font=10*p.dpr+'px system-ui';ctx.textAlign='left';
+    ctx.fillText('无有效样本',p.x+p.w+3*p.dpr,p.y+12*p.dpr);return;
+  }
+  const x=p.x+p.w+13*p.dpr,w=12*p.dpr,g=ctx.createLinearGradient(0,p.y+p.h,0,p.y);g.addColorStop(0,'rgb(68,1,84)');g.addColorStop(.25,'rgb(59,82,139)');g.addColorStop(.5,'rgb(33,145,140)');g.addColorStop(.75,'rgb(92,200,99)');g.addColorStop(1,'rgb(253,231,37)');ctx.fillStyle=g;ctx.fillRect(x,p.y,w,p.h);ctx.strokeStyle=chart.frame;ctx.strokeRect(x,p.y,w,p.h);const {base,selected}=colorbarValues(pol),[lo,hi]=selected,mid=(lo+hi)/2;ctx.fillStyle=chart.ink;ctx.font=`${10*p.dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(nice(hi,3),x+w+5*p.dpr,p.y);ctx.fillText(nice(mid,3),x+w+5*p.dpr,p.y+p.h/2);ctx.fillText(nice(lo,3),x+w+5*p.dpr,p.y+p.h);ctx.textBaseline='top';ctx.fillText('K',x,p.y+3*p.dpr);for(const [value,color] of [[hi,'#fff2a8'],[lo,'#7edcff']]){const y=Math.max(p.y,Math.min(p.y+p.h,colorbarY(p,value,base)));ctx.beginPath();ctx.moveTo(x-2*p.dpr,y);ctx.lineTo(x-11*p.dpr,y-6*p.dpr);ctx.lineTo(x-11*p.dpr,y+6*p.dpr);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#071018';ctx.lineWidth=p.dpr;ctx.stroke()}}
+function colorbarHit(c,event,pol){if(app.noScaleSamples?.[pol]&&!app.colorRanges[pol])return null;const r=c.getBoundingClientRect(),p=plotRect(c),sx=c.width/r.width,sy=c.height/r.height,x=(event.clientX-r.left)*sx,y=(event.clientY-r.top)*sy,barX=p.x+p.w+13*p.dpr,barW=12*p.dpr;if(x<barX-15*p.dpr||x>barX+barW+3*p.dpr||y<p.y-8*p.dpr||y>p.y+p.h+8*p.dpr)return null;const {base,selected}=colorbarValues(pol),loY=colorbarY(p,selected[0],base),hiY=colorbarY(p,selected[1],base);return{handle:Math.abs(y-loY)<Math.abs(y-hiY)?'lo':'hi',base:[...base]}}
 function activeManualLayers(pol){const layers=[app.state.document.polarizations[pol]];if(app.state.view_mode==='single'){const specific=app.state.document.beam_polarizations?.[app.state.selected_beam]?.[pol];if(specific)layers.push(specific)}return layers}
-function drawReference(ctx,p,showLabel=true){const f=app.referenceFrequency;if(f===null||f<app.view.f0||f>app.view.f1)return;const x=p.x+(f-app.view.f0)/(app.view.f1-app.view.f0)*p.w;ctx.save();ctx.beginPath();ctx.strokeStyle='#ff334f';ctx.lineWidth=1.4*p.dpr;ctx.setLineDash([6*p.dpr,4*p.dpr]);ctx.moveTo(x,p.y);ctx.lineTo(x,p.y+p.h);ctx.stroke();ctx.setLineDash([]);if(showLabel){const label=`${nice(f,4)} MHz`,labelX=Math.min(x+5*p.dpr,p.x+p.w-88*p.dpr);ctx.font=`${11*p.dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#ff334f';ctx.fillRect(labelX-3*p.dpr,p.y+4*p.dpr,87*p.dpr,17*p.dpr);ctx.fillStyle='#fff';ctx.fillText(label,labelX,p.y+6*p.dpr)}ctx.restore()}
+// A solid line pins the measured coordinate on the source plot. The same hue
+// and a distinct dash pattern identify its projection on the waterfalls.
+function drawCoordinateGuide(ctx,p,axis,position,projected){
+  const frequency=axis==='frequency';
+  const ink=projected?(frequency?'#e4b6ff':'#86ffe1'):(frequency?chart.frequencyGuide:chart.recordGuide);
+  ctx.save();ctx.beginPath();
+  if(frequency){ctx.moveTo(position,p.y);ctx.lineTo(position,p.y+p.h)}
+  else{ctx.moveTo(p.x,position);ctx.lineTo(p.x+p.w,position)}
+  ctx.setLineDash(projected?(frequency?[7*p.dpr,4*p.dpr]:[6*p.dpr,3*p.dpr,1.5*p.dpr,3*p.dpr]):[]);
+  ctx.lineWidth=3.1*p.dpr;ctx.strokeStyle=projected?'#131023c9':chart.paper;ctx.stroke();
+  ctx.lineWidth=1.4*p.dpr;ctx.strokeStyle=ink;ctx.stroke();ctx.restore();
+}
+function drawReference(ctx,p,projected){
+  const f=app.referenceFrequency;
+  if(f===null||f<app.view.f0||f>app.view.f1)return;
+  const x=p.x+(f-app.view.f0)/(app.view.f1-app.view.f0)*p.w;
+  drawCoordinateGuide(ctx,p,'frequency',x,projected);
+  if(!projected)return;
+  const labelX=Math.min(x+5*p.dpr,p.x+p.w-88*p.dpr);
+  ctx.save();ctx.font=`${11*p.dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillStyle='#58326b';ctx.fillRect(labelX-3*p.dpr,p.y+4*p.dpr,87*p.dpr,17*p.dpr);
+  ctx.fillStyle='#fff';ctx.fillText(nice(f,4)+' MHz',labelX,p.y+6*p.dpr);ctx.restore();
+}
 function spectrumTick(v,step){const a=Math.abs(v);if(a>=10000||a>0&&a<.0001)return v.toExponential(2);const digits=Number.isFinite(step)&&step>0?Math.max(0,Math.min(5,-Math.floor(Math.log10(step)))):2;return v.toFixed(digits)}
 function quantile(sorted,q){if(sorted.length===1)return sorted[0];const position=(sorted.length-1)*q,index=Math.floor(position),fraction=position-index;return sorted[index]+(sorted[Math.min(index+1,sorted.length-1)]-sorted[index])*fraction}
 function spectrumYLimits(sorted,mode){let lo,hi;if(mode==='full'){lo=sorted[0];hi=sorted[sorted.length-1]}else if(mode==='percentile'){lo=quantile(sorted,.005);hi=quantile(sorted,.995)}else{const q1=quantile(sorted,.25),q3=quantile(sorted,.75),iqr=q3-q1,strong=mode==='strong',fence=strong?1.5:2.5,tail=strong?.02:.01;lo=Math.max(quantile(sorted,tail),q1-fence*iqr);hi=Math.min(quantile(sorted,1-tail),q3+fence*iqr)}if(!(hi>lo)){const centre=Number.isFinite(lo)?lo:0,span=Math.max(1,Math.abs(centre)*.05);return[centre-span,centre+span]}const margin=(hi-lo)*.08;return[lo-margin,hi+margin]}
-function drawSpectrumAxis(ctx,p,h,lo=null,hi=null){ctx.strokeStyle='#304257';ctx.lineWidth=p.dpr;ctx.strokeRect(p.x,p.y,p.w,p.h);ctx.font=`${11*p.dpr}px system-ui`;ctx.fillStyle='#91a3b7';ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=5;i++){const x=p.x+p.w*i/5,f=app.view.f0+(app.view.f1-app.view.f0)*i/5;ctx.beginPath();ctx.moveTo(x,p.y);ctx.lineTo(x,p.y+p.h);ctx.strokeStyle=i===0||i===5?'#304257':'#1b2837';ctx.stroke();ctx.fillText(nice(f,1),x,p.y+p.h+5*p.dpr)}if(lo!==null&&hi!==null){ctx.textAlign='right';ctx.textBaseline='middle';for(let i=0;i<=4;i++){const y=p.y+p.h*i/4,v=hi-(hi-lo)*i/4;ctx.fillText(spectrumTick(v,(hi-lo)/4),p.x-7*p.dpr,y)}ctx.save();ctx.translate(13*p.dpr,p.y+p.h/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.fillText('Mean (K)',0,0);ctx.restore()}ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('Frequency (MHz)',p.x+p.w/2,h-1*p.dpr)}
+function drawSpectrumAxis(ctx,p,h,lo=null,hi=null){ctx.strokeStyle=chart.frame;ctx.lineWidth=p.dpr;ctx.strokeRect(p.x,p.y,p.w,p.h);ctx.font=`${11*p.dpr}px system-ui`;ctx.fillStyle=chart.ink;ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=5;i++){const x=p.x+p.w*i/5,f=app.view.f0+(app.view.f1-app.view.f0)*i/5;ctx.beginPath();ctx.moveTo(x,p.y);ctx.lineTo(x,p.y+p.h);ctx.strokeStyle=i===0||i===5?chart.frame:chart.grid;ctx.stroke();ctx.fillText(frequencyTick(f),x,p.y+p.h+5*p.dpr)}if(lo!==null&&hi!==null){ctx.textAlign='right';ctx.textBaseline='middle';for(let i=0;i<=4;i++){const y=p.y+p.h*i/4,v=hi-(hi-lo)*i/4;ctx.fillText(spectrumTick(v,(hi-lo)/4),p.x-7*p.dpr,y);ctx.beginPath();ctx.strokeStyle=chart.grid;ctx.moveTo(p.x,y);ctx.lineTo(p.x+p.w,y);ctx.stroke()}ctx.save();ctx.translate(13*p.dpr,p.y+p.h/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.fillText('Mean (K)',0,0);ctx.restore()}ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('Frequency (MHz)',p.x+p.w/2,h-1*p.dpr)}
 const app={state:null,mode:'frequency',contrast:0,autoWidth:1,imageScaleIndex:2,spectrumYMode:'strong',view:null,drag:null,colorDrag:null,colorRanges:[null,null],autoLimits:[[0,1],[0,1]],renderSeq:0,spectrumRevision:-1,images:[null,null],imageViews:[null,null],imageKeys:[null,null],imageQuality:[null,null],limits:[[0,1],[0,1]],spectrumData:null,meanSpectrum:null,referenceFrequency:null,dataEpoch:0,history:[],framePending:false,renderPending:false,renderRunning:false,renderTimer:null,settleTimer:null,renderQuality:'final',lastRenderStart:0,controllers:[],wheelActive:false,scopePending:false,scopeRequest:0,spectrumRequest:0,spectrumInFlight:false,spectrumPending:false,spectrumKey:null,sidebarUserChoice:false};
 
+function frequencyBounds(state){return state.frequency_cell_bounds||state.frequency_range}
+let chart;
+const chartThemes={
+  dark:{paper:'#10151a',ink:'#bcc7d3',frame:'#5e6d7c',grid:'#303c48',cellGrid:'#d7ebff45',
+        pol:['#57c7ff','#ffb15b'],frequencyGuide:'#e4b6ff',recordGuide:'#86ffe1',highlight:'#ceeefe',highlightFill:'#ceeefe30'},
+  light:{paper:'#fcfdff',ink:'#34465a',frame:'#68788a',grid:'#d2d9e0',cellGrid:'#627e9960',
+         pol:['#005a99','#994300'],frequencyGuide:'#78359d',recordGuide:'#006b5d',highlight:'#155883',highlightFill:'#0876b528'}
+};
+const scales={follow:true,curves:new Map(),waterfall:[null,null],renderTimer:null};
+function waterfallRangeKey(view){
+  return JSON.stringify([app.state.group.key,app.state.view_mode,app.state.selected_beam,$('#applyAuto').checked,app.contrast,view.f0,view.f1,view.t0,view.t1]);
+}
+function bandRangeKey(){return band.rangeMode==='manual'?JSON.stringify(band.fixed):band.rangeMode}
+function curveLimits(plot,view,calculated){
+  const key=JSON.stringify([app.state.group.key,app.state.view_mode,app.state.selected_beam,$('#applyAuto').checked,...view]);
+  const prior=scales.curves.get(plot);
+  if(!scales.follow&&prior?.key===key)return prior.limits;
+  scales.curves.set(plot,{key,limits:calculated});
+  return calculated;
+}
+
+function initDisplayPreferences(){
+  const theme=$('#themeMode'),system=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: light)'):null;
+  function renderTheme(){
+    const name=theme.value==='system'?(system?.matches?'light':'dark'):theme.value;
+    chart=chartThemes[name];
+    document.documentElement.setAttribute('data-theme',name);
+    band.painted=[null,null];app.spectrumDrawCache=null;
+    if(app.view)requestLocalDraw();
+  }
+  const savedTheme=storedPreference('crafts.theme','system');
+  theme.value=['light','dark','system'].includes(savedTheme)?savedTheme:'system';
+  theme.onchange=()=>{storePreference('crafts.theme',theme.value);renderTheme()};
+  system?.addEventListener('change',()=>{if(theme.value==='system')renderTheme()});
+  renderTheme();
+
+  const follow=$('#followMask'),selector=$('#bandRange'),low=$('#bandLow'),high=$('#bandHigh');
+  scales.follow=storedPreference('crafts.maskScale','1')==='1';
+  follow.checked=scales.follow;
+  follow.onchange=()=>{
+    if(!follow.checked&&app.view&&viewIsClear()){
+      const key=waterfallRangeKey(app.view);
+      scales.waterfall=app.limits.map((limits,pol)=>app.noScaleSamples?.[pol]?null:{key,limits:[...limits]});
+    }else{scales.waterfall=[null,null]}
+    scales.follow=follow.checked;storePreference('crafts.maskScale',scales.follow?'1':'0');
+    band.cache=[null,null];app.spectrumDrawCache=null;
+    renderAll();requestLocalDraw();
+  };
+  const validRange=pair=>Array.isArray(pair)&&pair.length===2&&pair.every(Number.isFinite)&&pair[0]<pair[1];
+  try{
+    const fixed=JSON.parse(storedPreference('crafts.bandKelvin','null'));
+    if(validRange(fixed))band.fixed=fixed;
+  }catch{}
+  const modes=['full','strong','robust','percentile'];
+  const savedMode=storedPreference('crafts.bandRange','full');
+  band.rangeMode=(modes.includes(savedMode)||(savedMode==='manual'&&band.fixed))?savedMode:'full';
+  app.spectrumYMode=storedPreference('crafts.spectrumY','strong');
+  if(!modes.includes(app.spectrumYMode))app.spectrumYMode='strong';
+  $('#spectrumY').value=app.spectrumYMode;
+  function displayRange(){
+    selector.value=band.rangeMode;$('#bandManual').hidden=band.rangeMode!=='manual';
+    if(band.fixed){low.value=String(band.fixed[0]);high.value=String(band.fixed[1])}
+  }
+  displayRange();
+  selector.onchange=()=>{
+    if(selector.value==='manual'&&!band.fixed){
+      const ranges=band.cache.filter(item=>item&&Number.isFinite(item.low)&&Number.isFinite(item.high));
+      if(ranges.length)band.fixed=[Math.min(...ranges.map(r=>r.low)),Math.max(...ranges.map(r=>r.high))];
+    }
+    band.rangeMode=selector.value;
+    if(band.fixed)storePreference('crafts.bandKelvin',JSON.stringify(band.fixed));
+    storePreference('crafts.bandRange',band.rangeMode);displayRange();requestLocalDraw();
+  };
+  function applyRange(){
+    const pair=[low.valueAsNumber,high.valueAsNumber];
+    if(!validRange(pair)){toast('请输入有效 K 范围，下限需小于上限。',true);return}
+    band.fixed=pair;storePreference('crafts.bandKelvin',JSON.stringify(pair));requestLocalDraw();
+  }
+  $('#applyBandRange').onclick=applyRange;
+  for(const input of [low,high])input.onkeydown=event=>{
+    if(event.key==='Enter'){event.preventDefault();applyRange()}
+  };
+}
+const band = {
+  rangeMode:'full', fixed:null, visible:true, width:178, selected:null, drag:null, resizing:false,
+  cache:[null,null], painted:[null,null]
+};
+
+
+function bandData(){
+  const state=app.state, data=app.spectrumData;
+  if(!band.visible || !state?.ready || app.scopePending || !data?.band_profile ||
+     data.group_key!==state.group.key || data.view_mode!==state.view_mode ||
+     (state.view_mode==='single' && data.view_label!==state.selected_beam) ||
+     data.apply_auto!==$('#applyAuto').checked || data.updating ||
+     data.content_revision!==state.mask_epoch)return null;
+  return data.band_profile;
+}
+
+function bandSummary(pol,record){
+  const data=bandData();
+  if(!data)return '均值更新中…';
+  const count=data.valid_channels[pol][record];
+  return temperature(data.mean_k[pol][record])+' · 有效 '+count+'/'+data.total_channels;
+}
+
+function refreshRecordCard(){
+  const record=band.selected;
+  const label=record===null?'—':String(record);
+  if($('#pinnedRecord').textContent!==label)$('#pinnedRecord').textContent=label;
+  $('#pinnedHint').hidden=record!==null;$('#pinnedValues').hidden=record===null;
+  if(record===null)return;
+  const data=bandData();
+  for(const pol of [0,1]){
+    $('#pinnedK'+pol).textContent=data?temperature(data.mean_k[pol][record]):'更新中';
+    $('#pinnedN'+pol).textContent=data?'有效 '+data.valid_channels[pol][record]+' / '+data.total_channels:'';
+  }
+}
+
+function recordGuide(ctx,p,projected=false){
+  const record=band.selected;
+  if(!band.visible || record===null || record+.5<app.view.t0 || record+.5>app.view.t1)return;
+  const y=p.y+(app.view.t1-record-.5)*p.h/(app.view.t1-app.view.t0);
+  drawCoordinateGuide(ctx,p,'record',y,projected);
+}
+
+function paintBand(pol){
+  if(!band.visible)return;
+  const canvas=$('#band'+pol),{ctx,w,h,dpr}=fitCanvas(canvas);
+  const p={x:10*dpr,y:PAD.t*dpr,w:w-20*dpr,h:h-(PAD.t+PAD.b)*dpr,dpr};
+  if(p.w<1||p.h<1||!app.view)return;
+  const {t0,t1}=app.view,data=bandData();
+  let cache=band.cache[pol];
+  if(!cache||cache.data!==data||cache.t0!==t0||cache.t1!==t1||cache.rangeKey!==bandRangeKey()){
+    const values=data?.mean_k[pol]||[];
+    const first=Math.max(0,Math.ceil(t0-.5)),end=Math.min(values.length,Math.ceil(t1-.5));
+    const sorted=values.slice(first,end).filter(Number.isFinite).sort((a,b)=>a-b);
+    const rangeKey=bandRangeKey();
+    let limits=null;
+    if(sorted.length){
+      const mode=band.rangeMode==='manual'?'full':band.rangeMode;
+      if(band.rangeMode==='manual'&&band.fixed){
+        limits=band.fixed;
+      }else if(mode==='full'&&sorted[0]===sorted.at(-1)){
+        const margin=Math.max(.0001,Math.abs(sorted[0])*.001);
+        limits=[sorted[0]-margin,sorted[0]+margin];
+      }else{
+        limits=spectrumYLimits(sorted,mode);
+      }
+      limits=curveLimits('band'+pol,[t0,t1,rangeKey],limits);
+    }
+    cache={data,t0,t1,rangeKey,first,end,values,low:limits?.[0]??Infinity,high:limits?.[1]??-Infinity};
+    band.cache[pol]=cache;
+  }
+  const gesture=band.drag;
+  const drag=gesture&&(gesture.pol===pol||(gesture.kind==='time'&&gesture.both))?gesture:null;
+  const rows=drag?bandRows(drag.start,drag.end):[];
+  const gridOn=$('#cellGrid').checked,last=band.painted[pol];
+  if(last&&last.cache===cache&&last.w===w&&last.h===h&&last.dpr===dpr&&last.record===band.selected&&last.gridOn===gridOn&&last.start===rows[0]&&last.end===rows[1]&&last.kind===drag?.kind)return;
+  band.painted[pol]={cache,w,h,dpr,record:band.selected,gridOn,start:rows[0],end:rows[1],kind:drag?.kind};
+  const y=t=>p.y+(t1-t)*p.h/(t1-t0);
+  ctx.fillStyle=chart.paper;ctx.fillRect(0,0,w,h);
+  ctx.font='600 '+11*dpr+'px system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillStyle=chart.pol[pol];ctx.fillText('全频带均值 (K)',p.x,12*dpr);
+  ctx.strokeStyle=chart.frame;ctx.lineWidth=dpr;ctx.strokeRect(p.x,p.y,p.w,p.h);
+  drawCellGrid(ctx,p,'record');
+  const {low,high,values}=cache;
+  if(Number.isFinite(low)){
+    ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();
+    ctx.strokeStyle=chart.grid;ctx.beginPath();
+    const midpoint=p.x+p.w/2;ctx.moveTo(midpoint,p.y);ctx.lineTo(midpoint,p.y+p.h);
+    if(!gridOn||!recordGridVisible(p))for(let i=1;i<4;i++){const row=p.y+p.h*i/4;ctx.moveTo(p.x,row);ctx.lineTo(p.x+p.w,row)}
+    ctx.stroke();
+    ctx.strokeStyle=chart.pol[pol];ctx.lineWidth=1.5*dpr;ctx.beginPath();let connected=false;
+    for(let i=cache.first;i<cache.end;i++){
+      if(!Number.isFinite(values[i])){connected=false;continue}
+      const x=p.x+(values[i]-low)*p.w/(high-low),row=y(i+.5);
+      if(connected)ctx.lineTo(x,row);else{ctx.moveTo(x,row);ctx.lineTo(x+.1*dpr,row)}connected=true;
+    }
+    ctx.stroke();ctx.restore();ctx.font=10*dpr+'px system-ui';ctx.fillStyle=chart.ink;
+    ctx.fillText(spectrumTick(low,(high-low)/4),p.x,p.y+p.h+12*dpr);
+    ctx.textAlign='right';ctx.fillText(spectrumTick(high,(high-low)/4),p.x+p.w,p.y+p.h+12*dpr);
+  }else{ctx.fillStyle=chart.ink;ctx.fillText(data?'无有效 channel':'计算中…',p.x+3*dpr,p.y+p.h/2)}
+  if(drag){
+    ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();
+    const zoom=drag.kind==='zoom-time';
+    ctx.fillStyle=zoom?'#47aeff35':'#ff537a34';ctx.strokeStyle=zoom?chart.pol[0]:'#df4370';
+    ctx.setLineDash(zoom?[4*dpr,3*dpr]:[]);
+    ctx.fillRect(p.x,y(rows[1]),p.w,y(rows[0])-y(rows[1]));
+    ctx.strokeRect(p.x,y(rows[1]),p.w,y(rows[0])-y(rows[1]));ctx.restore();
+  }
+  recordGuide(ctx,p);
+}
+
+function visibleRecord(t){
+  const first=Math.max(0,Math.floor(app.view.t0));
+  const last=Math.min(app.state.shape[0]-1,Math.ceil(app.view.t1)-1);
+  return Math.max(first,Math.min(last,Math.floor(t)));
+}
+function bandRows(start,end){
+  return [visibleRecord(Math.min(start,end)),visibleRecord(Math.max(start,end))+1];
+}
+function bandRecordAt(canvas,event){
+  const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+  const height=canvas.height-(PAD.t+PAD.b)*dpr;
+  const y=(event.clientY-rect.top)*canvas.height/rect.height-PAD.t*dpr;
+  return {t:app.view.t1-Math.max(0,Math.min(1,y/height))*(app.view.t1-app.view.t0),
+          inside:y>=0&&y<=height&&event.clientX>=rect.left+10&&event.clientX<=rect.left+rect.width-10};
+}
+
+function readBand(pol,t){
+  const record=visibleRecord(t);
+  app.cursor={kind:'band',pol,record};cellProbe.wanted=null;
+  setCoordinates((app.state.view_mode==='single'?app.state.selected_beam:'19-beam Mean')+' · Pol '+pol+' · Record '+record,
+                 '全频带 '+bandSummary(pol,record));
+  return record;
+}
+function lowerBound(a,value,upper=false){let lo=0,hi=a.length;while(lo<hi){const m=(lo+hi)>>>1;if(a[m]<value||(upper&&a[m]===value))lo=m+1;else hi=m}return lo}
+function installGrid(data){
+  if(app.grid?.key===data.group_key)return;
+  const f=data.frequency;
+  if(data.group_key!==app.state?.group.key||f?.length!==app.state.shape[1]||f.length<2||f.some((v,i)=>!Number.isFinite(v)||(i&&v<=f[i-1])))return;
+  const edges=new Float64Array(f.length+1);
+  edges[0]=f[0]-(f[1]-f[0])/2;
+  for(let i=1;i<f.length;i++)edges[i]=f[i-1]+(f[i]-f[i-1])/2;
+  edges[f.length]=f.at(-1)+(f.at(-1)-f.at(-2))/2;
+  app.grid={key:data.group_key,frequency:f,edges};
+}
+function channelAt(f){return Math.max(0,Math.min(app.grid.frequency.length-1,lowerBound(app.grid.edges,f,true)-1))}
+function cellAt(d){return{c:channelAt(d.f),r:Math.max(0,Math.min(app.state.shape[0]-1,Math.floor(d.t)))}}
+function selectedCells(drag=app.drag||band.drag){
+  if(!drag||!app.grid||drag.kind==='pan'||drag.kind.startsWith('zoom-'))return null;
+  if(drag.source==='band'){
+    const [r0,r1]=bandRows(drag.start,drag.end);
+    return {c0:0,c1:app.grid.frequency.length,r0,r1};
+  }
+  const a=cellAt(drag.start),b=cellAt(drag.now),cells={c0:Math.min(a.c,b.c),c1:Math.max(a.c,b.c)+1,r0:Math.min(a.r,b.r),r1:Math.max(a.r,b.r)+1};
+  if(drag.kind==='frequency'){cells.r0=0;cells.r1=app.state.shape[0]}
+  if(drag.kind==='time'){cells.c0=0;cells.c1=app.grid.frequency.length}
+  return cells;
+}
+function cellFrequencyRange(a,b){
+  if(!app.grid)return[a,b];
+  const f=app.grid.frequency,lo=lowerBound(f,a),hi=lowerBound(f,b,true);
+  return hi>lo?[app.grid.edges[lo],app.grid.edges[hi]]:null;
+}
+function recordGridVisible(p){
+  return p.h/p.dpr/(app.view.t1-app.view.t0)>=6;
+}
+function drawCellGrid(ctx,p,axis='both'){
+  if(!app.grid||!$('#cellGrid').checked)return;
+  const edges=app.grid.edges,first=Math.max(0,lowerBound(edges,app.view.f0)),last=Math.min(edges.length-1,lowerBound(edges,app.view.f1));
+  ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();ctx.beginPath();
+  ctx.strokeStyle=chart.cellGrid;ctx.lineWidth=.7*p.dpr;
+  if(axis!=='record'&&p.w/p.dpr/Math.max(1,last-first)>=8){
+    for(let i=first;i<=last;i++){const x=p.x+(edges[i]-app.view.f0)/(app.view.f1-app.view.f0)*p.w;ctx.moveTo(x,p.y);ctx.lineTo(x,p.y+p.h)}
+  }
+  if(axis!=='frequency'&&recordGridVisible(p)){
+    for(let i=Math.ceil(app.view.t0);i<=Math.floor(app.view.t1);i++){const y=p.y+(app.view.t1-i)/(app.view.t1-app.view.t0)*p.h;ctx.moveTo(p.x,y);ctx.lineTo(p.x+p.w,y)}
+  }
+  ctx.stroke();ctx.restore();
+}
+function drawCellSelection(ctx,p,pol=null){
+  const drag=app.drag||band.drag;
+  if(pol===null&&drag?.kind==='time')return;
+  const cells=selectedCells(drag);
+  const hover=!drag&&app.hover&&app.grid?app.hover:null;
+  if(!cells&&!hover)return;
+  if(cells&&pol!==null&&!drag.both&&drag.pol!==pol)return;
+  if(hover&&pol!==null&&hover.pol!==pol)return;
+  const c0=cells?.c0??hover.c,c1=cells?.c1??hover.c+1;
+  const x=p.x+(app.grid.edges[c0]-app.view.f0)/(app.view.f1-app.view.f0)*p.w;
+  const w=(app.grid.edges[c1]-app.grid.edges[c0])/(app.view.f1-app.view.f0)*p.w;
+  const r0=cells?.r0??hover.r,r1=cells?.r1??hover.r+1;
+  const y=pol===null?p.y:p.y+(app.view.t1-r1)/(app.view.t1-app.view.t0)*p.h;
+  const h=pol===null?p.h:(r1-r0)/(app.view.t1-app.view.t0)*p.h;
+  ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();
+  const fromBand=drag?.source==='band';
+  ctx.fillStyle=fromBand?'#ff537a34':pol===null?chart.highlightFill:(cells?'#d2f5ff30':'#ffffff15');
+  ctx.strokeStyle=fromBand?'#ff89a7':pol===null?chart.highlight:(cells?'#d2f5ff':'#ffffff8c');
+  ctx.lineWidth=(cells?1.6:1)*p.dpr;ctx.setLineDash([]);
+  ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,Math.max(w,p.dpr),h);ctx.restore();
+}
+function editPayload(drag){return{action:'edit',mode:drag.kind,pol:drag.pol,both:drag.both,cells:selectedCells(drag),...drag.context}}
+function selectionContext(){return{group_key:app.state.group.key,revision:app.state.revision,view_mode:app.state.view_mode,beam:app.state.selected_beam}}
+function minimumDrag(){return Math.max(1,Math.min(12,Number($('#dragThreshold').value)||3))}
+const cellProbe={cache:new Map(),wanted:null,running:false,timer:null,lastStart:-Infinity,controller:null};
+function setCoordinates(meta,values='—',title=''){
+  if($('#coordMeta').textContent!==meta)$('#coordMeta').textContent=meta;
+  if($('#coordValues').textContent!==values)$('#coordValues').textContent=values;
+  $('#coord').title=title||`${meta}\n${values}`;
+}
+function temperature(value){return Number.isFinite(value)?nice(value,4)+' K':'无有效值'}
+function clearCoordinates(){app.cursor=null;cellProbe.wanted=null;clearTimeout(cellProbe.timer);cellProbe.controller?.abort();setCoordinates('移到图中查看采样值')}
+function showCellValue(data){
+  if(app.cursor?.kind!=='waterfall')return;
+  const values=`T−median ${temperature(data.delta_k)} · T ${temperature(data.temperature_k)}${data.manual_bad?' · 人工标记':''}`;
+  setCoordinates(app.cursor.meta,values,`数值来自当前显示数据；使用自动 mask：${data.apply_auto?'是':'否'}。\n自动标记 ${data.auto_flagged_beams}/${data.total_beams} beam；人工标记${data.manual_bad?'已覆盖（瀑布图保留底图）':'未覆盖'}。\n${values}`);
+}
+function scheduleCellProbe(){
+  if(cellProbe.running||!cellProbe.wanted)return;
+  clearTimeout(cellProbe.timer);
+  cellProbe.timer=setTimeout(fetchCellProbe,Math.max(0,80-(performance.now()-cellProbe.lastStart)));
+}
+async function fetchCellProbe(){
+  const cursor=cellProbe.wanted;
+  if(cellProbe.running||!cursor||cursor.key!==app.cursor?.key)return;
+  cellProbe.wanted=null;cellProbe.running=true;cellProbe.lastStart=performance.now();
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),3000);cellProbe.controller=controller;
+  try{
+    const response=await fetch('/api/cell?'+new URLSearchParams(cursor.params),{signal:controller.signal});
+    if(!response.ok)throw Error('Cell unavailable');
+    const data=await response.json();
+    if(cursor.key!==app.cursor?.key)return;
+    if(data.group_key!==cursor.params.group_key||data.revision!==cursor.params.revision||data.view_mode!==cursor.params.view_mode||data.beam!==cursor.params.beam||data.c!==cursor.params.c||data.r!==cursor.params.r||data.pol!==cursor.params.pol||data.apply_auto!==Boolean(cursor.params.apply_auto))return;
+    if(cellProbe.cache.size>=128)cellProbe.cache.delete(cellProbe.cache.keys().next().value);
+    cellProbe.cache.set(cursor.key,data);showCellValue(data);
+  }catch{if(cursor.key===app.cursor?.key)setCoordinates(cursor.meta,'读取失败，移开后重试')}
+  finally{clearTimeout(timeout);cellProbe.controller=null;cellProbe.running=false;scheduleCellProbe()}
+}
+function readWaterfallCell(pol,cell){
+  const params={...selectionContext(),c:cell.c,r:cell.r,pol,apply_auto:+$('#applyAuto').checked},key=JSON.stringify(params);
+  if(app.cursor?.key===key)return;
+  const scope=app.state.view_mode==='single'?app.state.selected_beam:'Mean';
+  app.cursor={kind:'waterfall',key,params,meta:`${scope} · Pol ${pol} · channel ${cell.c} · ${nice(app.grid.frequency[cell.c],4)} MHz · Record ${cell.r}`};
+  const cached=cellProbe.cache.get(key);
+  if(cached){cellProbe.wanted=null;showCellValue(cached)}
+  else{setCoordinates(app.cursor.meta,'读取中…');cellProbe.wanted=app.cursor;scheduleCellProbe()}
+}
+function refreshSpectrumCoordinates(){
+  const cursor=app.cursor,data=app.spectrumData;
+  if(cursor?.kind!=='spectrum')return;
+  const matches=data?.group_key===app.state.group.key&&data.view_mode===app.state.view_mode&&data.apply_auto===$('#applyAuto').checked&&(data.view_mode!=='single'||data.view_label===app.state.selected_beam);
+  const values=matches&&!data.updating&&data.selected_ready?`Pol 0 ${temperature(data.pol0[cursor.c])} · Pol 1 ${temperature(data.pol1[cursor.c])}`:'频谱更新中…';
+  setCoordinates(cursor.meta,values,'当前频谱在该原始 channel 的 Mean(K)，使用与图中相同的自动和人工 mask。');
+}
+function readSpectrumCell(c){
+  const scope=app.state.view_mode==='single'?app.state.selected_beam:'Mean';
+  app.cursor={kind:'spectrum',c,meta:`${scope} spectrum · channel ${c} · ${nice(app.grid.frequency[c],4)} MHz`};
+  cellProbe.wanted=null;refreshSpectrumCoordinates();
+}
+function sufficientDrag(drag,d,p){const dx=Math.abs(d.x-drag.start.x),dy=Math.abs(d.y-drag.start.y),n=minimumDrag()*p.dpr;return drag.kind==='frequency'?dx>=n:drag.kind==='time'?dy>=n:Math.hypot(dx,dy)>=n}
 function sameView(a,b){return Boolean(a&&b&&['f0','f1','t0','t1'].every(k=>Math.abs(a[k]-b[k])<1e-9))}
 function constrainView(view,state){
-  const fmin=state.frequency_range[0],fmax=state.frequency_range[1],fw=fmax-fmin,tw=state.shape[0];
+  const [fmin,fmax]=frequencyBounds(state),fw=fmax-fmin,tw=state.shape[0];
   const w=Math.min(fw,Math.max(fw/2000,view.f1-view.f0)),h=Math.min(tw,Math.max(Math.min(2,tw),view.t1-view.t0));
   const f0=Math.max(fmin,Math.min(view.f0,fmax-w)),t0=Math.max(0,Math.min(view.t0,tw-h));
   return{f0,f1:f0+w,t0,t1:t0+h};
 }
 function zoomAt(view,axis,anchor,factor,state){
   const v={...view},freq=axis==='frequency',lo=freq?'f0':'t0',hi=freq?'f1':'t1';
-  const full=freq?state.frequency_range[1]-state.frequency_range[0]:state.shape[0];
+  const full=freq?frequencyBounds(state)[1]-frequencyBounds(state)[0]:state.shape[0];
   const minimum=freq?full/2000:Math.min(2,full),oldSpan=view[hi]-view[lo];
   const span=Math.min(full,Math.max(minimum,oldSpan*factor)),ratio=Math.max(0,Math.min(1,(anchor-view[lo])/oldSpan));
   v[lo]=anchor-ratio*span;v[hi]=v[lo]+span;
@@ -640,19 +1140,21 @@ function automaticMaskDisplay(){
 function updateAutomaticControls(){
   const{applyAuto}=automaticMaskDisplay();
   $('#showAuto').disabled=Boolean(app.state?.busy||app.navigationPending)||!applyAuto;
-  $('#autoMaskStatus').textContent=applyAuto?'自动 mask：三图已启用':'自动 mask：三图已停用（保留人工标记）';
+  $('#autoMaskStatus').textContent=applyAuto?'自动 mask 已启用':'自动 mask 已停用';
 }
 function currentImageKey(){
   if(!app.state)return'';
   const{applyAuto,showAuto}=automaticMaskDisplay();
-  return JSON.stringify([app.dataEpoch,app.state.group.key,app.state.view_mode,app.state.selected_beam,applyAuto,showAuto,app.contrast,app.autoWidth,app.colorRanges]);
+  return JSON.stringify([app.dataEpoch,app.state.group.key,app.state.view_mode,app.state.selected_beam,applyAuto,showAuto,scales.follow?app.state.mask_epoch:null,app.contrast,app.autoWidth,app.colorRanges]);
 }
 function viewIsClear(){
   const key=currentImageKey();
   return !app.scopePending&&app.images.every((image,pol)=>image&&app.imageKeys[pol]===key&&app.imageQuality[pol]==='final'&&sameView(app.imageViews[pol],app.view));
 }
 function updateViewStatus(message){
-  $('#viewStatus').textContent=message??app.renderError??(viewIsClear()?'清晰视图':'预览更新中…');
+  const clear=viewIsClear()&&!message&&!app.renderError;
+  $('#viewStatus').dataset.clear=String(clear);
+  $('#viewStatus').textContent=message??app.renderError??(clear?'清晰视图':'预览更新中…');
 }
 function requestLocalDraw(){
   if(app.framePending)return;
@@ -675,16 +1177,16 @@ function drawManual(c,ctx,p,pol){
   ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();
   ctx.fillStyle='#ff3d6670';ctx.strokeStyle='#ff7690';ctx.lineWidth=p.dpr;
   for(const m of activeManualLayers(pol)){
-    for(const[a,b]of m.frequency_ranges_mhz){const q0=xy(c,a,app.view.t0),q1=xy(c,b,app.view.t1);ctx.fillRect(q0.x,p.y,q1.x-q0.x,p.h)}
-    for(const[a,b]of m.time_ranges_records){const q0=xy(c,app.view.f0,a),q1=xy(c,app.view.f1,b);ctx.fillRect(p.x,q1.y,p.w,q0.y-q1.y)}
-    for(const box of m.boxes){const[a,b]=box.frequency_mhz,[u,v]=box.records,q0=xy(c,a,u),q1=xy(c,b,v);ctx.fillRect(q0.x,q1.y,q1.x-q0.x,q0.y-q1.y);ctx.strokeRect(q0.x,q1.y,q1.x-q0.x,q0.y-q1.y)}
+    for(const[a,b]of m.frequency_ranges_mhz){const range=cellFrequencyRange(a,b);if(!range)continue;const q0=xy(c,range[0],app.view.t0,p),q1=xy(c,range[1],app.view.t1,p);ctx.fillRect(q0.x,p.y,q1.x-q0.x,p.h)}
+    for(const[a,b]of m.time_ranges_records){const q0=xy(c,app.view.f0,a,p),q1=xy(c,app.view.f1,b,p);ctx.fillRect(p.x,q1.y,p.w,q0.y-q1.y)}
+    for(const box of m.boxes){const range=cellFrequencyRange(...box.frequency_mhz);if(!range)continue;const[a,b]=range,[u,v]=box.records,q0=xy(c,a,u,p),q1=xy(c,b,v,p);ctx.fillRect(q0.x,q1.y,q1.x-q0.x,q0.y-q1.y);ctx.strokeRect(q0.x,q1.y,q1.x-q0.x,q0.y-q1.y)}
   }
   if(app.drag&&app.drag.pol===pol&&app.drag.now){
     const a=app.drag.start,b=app.drag.now,kind=app.drag.kind;
     let x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);
     if(kind==='zoom-frequency'){y=p.y;h=p.h}
     if(kind==='zoom-time'){x=p.x;w=p.w}
-    if(kind!=='pan'){
+    if(kind.startsWith('zoom-')){
       ctx.fillStyle=kind.startsWith('zoom-')?'#57c7ff33':'#ffffff22';ctx.strokeStyle=kind.startsWith('zoom-')?'#57c7ff':'#fff';ctx.setLineDash([5*p.dpr,4*p.dpr]);
       ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);
     }
@@ -693,29 +1195,35 @@ function drawManual(c,ctx,p,pol){
 }
 function drawPanel(pol){
   const c=canvases[pol],{ctx}=fitCanvas(c),p=plotRect(c);
-  ctx.fillStyle='#090e14';ctx.fillRect(0,0,c.width,c.height);ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle=chart.paper;ctx.fillRect(0,0,c.width,c.height);ctx.imageSmoothingEnabled=false;
   if(app.images[pol]&&app.imageViews[pol]&&app.imageKeys[pol]===currentImageKey()){
     const d=imageDestination(app.imageViews[pol],app.view,p);
     ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();ctx.drawImage(app.images[pol],d.x,d.y,d.w,d.h);ctx.restore();
   }
-  drawAxes(c,ctx,p,pol);drawColorbar(ctx,p,pol);drawManual(c,ctx,p,pol);drawReference(ctx,p,true);
+  drawCellGrid(ctx,p);drawAxes(c,ctx,p,pol);drawColorbar(ctx,p,pol);drawManual(c,ctx,p,pol);drawCellSelection(ctx,p,pol);drawReference(ctx,p,true);
+  recordGuide(ctx,p,true);paintBand(pol);
 }
 function redrawOverlays(){canvases.forEach((_,pol)=>drawPanel(pol))}
 async function renderPanel(pol,job){
   const c=canvases[pol],p=plotRect(c),u=new URL('/api/view.jpg',location.origin);
-  const params={pol,...job.view,width:Math.max(1,Math.round(p.w/p.dpr*job.scale)),height:Math.max(1,Math.round(p.h/p.dpr*job.scale)),contrast:job.contrast,auto_width:job.autoWidth,apply_auto:+job.applyAuto,show_auto:+job.showAuto,view_mode:job.viewMode,beam:job.beam};
-  if(job.colorRanges[pol]){params.vmin=job.colorRanges[pol][0];params.vmax=job.colorRanges[pol][1]}
+  const params={pol,...job.view,cells:1,clean_scale:+scales.follow,width:Math.max(1,Math.round(p.w/p.dpr*job.scale)),height:Math.max(1,Math.round(p.h/p.dpr*job.scale)),contrast:job.contrast,auto_width:job.autoWidth,apply_auto:+job.applyAuto,show_auto:+job.showAuto,view_mode:job.viewMode,beam:job.beam};
+  const rangeKey=waterfallRangeKey(job.view), held=scales.waterfall[pol];
+  const fixed=job.colorRanges[pol]||(!scales.follow&&held?.key===rangeKey?held.limits:null);
+  if(fixed){[params.vmin,params.vmax]=fixed}
   Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
   const controller=new AbortController();job.controllers.push(controller);
   try{
     const response=await fetch(u,{signal:controller.signal});
     if(!response.ok)throw Error(response.statusText);
     const low=Number(response.headers.get('X-Color-Low')),high=Number(response.headers.get('X-Color-High')),autoLow=Number(response.headers.get('X-Auto-Color-Low')),autoHigh=Number(response.headers.get('X-Auto-Color-High'));
+    const noScaleSamples=response.headers.get('X-Scale-Samples')==='0';
     const blob=await response.blob();
     if(job.key!==currentImageKey())return;
     const image=await createImageBitmap(blob);
     if(job.key!==currentImageKey()||controller.signal.aborted){image.close();return}
     app.images[pol]?.close?.();app.images[pol]=image;app.imageViews[pol]={...job.view};app.imageKeys[pol]=job.key;app.imageQuality[pol]=job.quality;
+    app.noScaleSamples??=[false,false];app.noScaleSamples[pol]=noScaleSamples;
+    if(!scales.follow&&!noScaleSamples&&!job.colorRanges[pol]&&job.quality==='final')scales.waterfall[pol]={key:rangeKey,limits:[low,high]};
     app.limits[pol]=[low,high];if(Number.isFinite(autoLow)&&Number.isFinite(autoHigh)&&autoHigh>autoLow)app.autoLimits[pol]=[autoLow,autoHigh];
     requestLocalDraw();
   }catch(error){if(error.name!=='AbortError'&&job.key===currentImageKey()){app.renderError='图像请求失败，请重置视图重试';updateViewStatus()}}
@@ -749,8 +1257,9 @@ function spectrumPoints(frequency,values,view,bins){
     for(const i of [...new Set([first,low,high,last])].sort((a,b)=>a-b))points.push([frequency[i],values[i]]);
     first=last=low=high=-1;
   }
-  for(let i=0;i<frequency.length;i++){
-    const f=frequency[i],v=values?.[i];if(f<view.f0||f>view.f1)continue;
+  const stop=lowerBound(frequency,view.f1,true);
+  for(let i=lowerBound(frequency,view.f0);i<stop;i++){
+    const f=frequency[i],v=values?.[i];
     if(!Number.isFinite(v)){flush();bucket=-1;if(points.length&&points.at(-1)!==null)points.push(null);continue}
     const next=Math.min(bins-1,Math.max(0,Math.floor((f-view.f0)/(view.f1-view.f0)*bins)));
     if(next!==bucket){flush();bucket=next}
@@ -760,9 +1269,10 @@ function spectrumPoints(frequency,values,view,bins){
   flush();return points;
 }
 function drawSpectrum(data){
-  app.spectrumData=data;
+  app.spectrumData=data;installGrid(data);
+  refreshSpectrumCoordinates();
   const c=$('#spectrum'),{ctx,w,h,dpr}=fitCanvas(c),p={x:PAD.l*dpr,y:23*dpr,w:w-(PAD.l+PAD.r)*dpr,h:h-51*dpr,dpr};
-  ctx.fillStyle='#090e14';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=chart.paper;ctx.fillRect(0,0,w,h);
   const single=$('#viewMode').value==='single';
   const matchingGroup=data.group_key===app.state.group.key;
   const cachedMean=app.meanSpectrum?.group_key===app.state.group.key?app.meanSpectrum:null;
@@ -770,20 +1280,23 @@ function drawSpectrum(data){
   const active=matchingGroup&&(single?data.view_mode==='single'&&data.view_label===$('#beamSelect').value:data.view_mode==='mean')?data:null;
   const scope=JSON.stringify([app.state.group.key,single?$('#beamSelect').value:'mean']);
   const series=[];
-  if(reference?.frequency?.length){series.push({f:reference.frequency,v:reference.pol0,color:'#57c7ff',reference:true},{f:reference.frequency,v:reference.pol1,color:'#ffb15b',reference:true})}
-  if(active?.frequency?.length){series.push({f:active.frequency,v:active.pol0,color:'#57c7ff',reference:false},{f:active.frequency,v:active.pol1,color:'#ffb15b',reference:false})}
+  if(reference?.frequency?.length){series.push({f:reference.frequency,v:reference.pol0,color:chart.pol[0],reference:true},{f:reference.frequency,v:reference.pol1,color:chart.pol[1],reference:true})}
+  if(active?.frequency?.length){series.push({f:active.frequency,v:active.pol0,color:chart.pol[0],reference:false},{f:active.frequency,v:active.pol1,color:chart.pol[1],reference:false})}
   const bins=Math.max(1,Math.floor(p.w/dpr)),cache=app.spectrumDrawCache;
   let prepared;
-  if(cache&&cache.data===data&&cache.reference===app.meanSpectrum&&cache.scope===scope&&cache.f0===app.view.f0&&cache.f1===app.view.f1&&cache.bins===bins&&cache.mode===app.spectrumYMode)prepared=cache;
+  if(cache&&cache.data===data&&cache.reference===app.meanSpectrum&&cache.scope===scope&&cache.f0===app.view.f0&&cache.f1===app.view.f1&&(cache.bins===bins||band.resizing)&&cache.mode===app.spectrumYMode)prepared=cache;
   else{
     let values=[];
-    for(const line of series)for(let i=0;i<line.f.length;i++){if(line.f[i]>=app.view.f0&&line.f[i]<=app.view.f1&&Number.isFinite(line.v?.[i]))values.push(line.v[i])}
-    if(!values.length){app.spectrumDrawCache=null;drawSpectrumAxis(ctx,p,h);ctx.fillStyle='#91a3b7';ctx.textAlign='left';ctx.fillText((active?.selected_ready||reference&&data.mean_ready)?'当前范围无有效谱线样本':'频谱计算中…',p.x+10,p.y+20);return}
+    for(const line of series){
+      const end=lowerBound(line.f,app.view.f1,true);
+      for(let i=lowerBound(line.f,app.view.f0);i<end;i++)if(Number.isFinite(line.v?.[i]))values.push(line.v[i]);
+    }
+    if(!values.length){app.spectrumDrawCache=null;drawSpectrumAxis(ctx,p,h);ctx.fillStyle=chart.ink;ctx.textAlign='left';ctx.fillText((active?.selected_ready||reference&&data.mean_ready)?'当前范围无有效谱线样本':'频谱计算中…',p.x+10,p.y+20);return}
     values.sort((a,b)=>a-b);
-    prepared={data,reference:app.meanSpectrum,scope,single,f0:app.view.f0,f1:app.view.f1,bins,mode:app.spectrumYMode,limits:spectrumYLimits(values,app.spectrumYMode),series:series.map(line=>({...line,points:spectrumPoints(line.f,line.v,app.view,bins)}))};
+    prepared={data,reference:app.meanSpectrum,scope,single,f0:app.view.f0,f1:app.view.f1,bins,mode:app.spectrumYMode,limits:curveLimits('spectrum',[app.view.f0,app.view.f1,app.spectrumYMode],spectrumYLimits(values,app.spectrumYMode)),series:series.map(line=>({...line,points:spectrumPoints(line.f,line.v,app.view,bins)}))};
     app.spectrumDrawCache=prepared;
   }
-  const[lo,hi]=prepared.limits;drawSpectrumAxis(ctx,p,h,lo,hi);
+  const[lo,hi]=prepared.limits;drawSpectrumAxis(ctx,p,h,lo,hi);drawCellGrid(ctx,p,'frequency');drawCellSelection(ctx,p);
   ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.w,p.h);ctx.clip();
   for(const line of prepared.series){
     ctx.beginPath();ctx.strokeStyle=line.color;ctx.globalAlpha=line.reference?0.48:1;ctx.lineWidth=(line.reference?1.2:1.35)*dpr;ctx.setLineDash(line.reference?[5*dpr,3*dpr]:[]);
@@ -796,28 +1309,33 @@ function drawSpectrum(data){
     }
     ctx.stroke();
   }
-  ctx.restore();drawReference(ctx,p,true);
-  ctx.font=`${10*dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle='#91a3b7';
+  ctx.restore();drawReference(ctx,p,false);
+  ctx.font=`${10*dpr}px system-ui`;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=chart.ink;
   ctx.fillText(`${single?$('#beamSelect').value:'19-beam Mean'} · ${data.apply_auto?'自动+手动':'手动'} · ${SPECTRUM_Y_LABELS[app.spectrumYMode]}`,p.x+4,14*dpr);
   const legend=$('#spectrumLegend');
-  legend.innerHTML=single?'<span>实线：当前 beam · 淡虚线：19-beam Mean</span><span class="legend-pol0">Pol 0</span><span class="legend-pol1">Pol 1</span>':'<span class="legend-pol0">Pol 0</span><span class="legend-pol1">Pol 1</span>';
+  const legendHtml=single?'<span>实线：当前 beam · 淡虚线：19-beam Mean</span><span class="legend-pol0">Pol 0</span><span class="legend-pol1">Pol 1</span>':'<span class="legend-pol0">Pol 0</span><span class="legend-pol1">Pol 1</span>';
+  if(legend.innerHTML!==legendHtml)legend.innerHTML=legendHtml;
   legend.title=single?'参考 Mean 只应用公共手动层；当前 beam 应用公共层与其专属层。':'';
 }
 async function pollSpectrum(force=false){
   if(!app.state?.ready||app.scopePending)return;
-  const key=JSON.stringify([app.state.group.key,app.state.spectrum_revision,$('#applyAuto').checked,app.state.view_mode,app.state.selected_beam]);
+  const profileWanted=band.visible,epoch=app.state.mask_epoch;
+  const key=JSON.stringify([app.state.group.key,app.state.spectrum_revision,$('#applyAuto').checked,app.state.view_mode,app.state.selected_beam,profileWanted,epoch]);
   if(!force&&key===app.spectrumKey)return;
   if(app.spectrumInFlight){app.spectrumPending=true;return}
   app.spectrumInFlight=true;app.spectrumPending=false;
   const seq=++app.spectrumRequest,group=app.state.group.key,requested=$('#applyAuto').checked,viewMode=app.state.view_mode,beam=app.state.selected_beam;
   try{
     const params=new URLSearchParams({apply_auto:+requested,view_mode:viewMode,beam});
+    if(profileWanted)params.set('include_profile','1');
     const response=await fetch(`/api/spectrum?${params}`);if(!response.ok)throw Error(response.statusText);
     const d=await response.json();
-    if(seq!==app.spectrumRequest||app.scopePending||group!==app.state.group.key||d.group_key!==group||requested!==$('#applyAuto').checked||d.view_mode!==app.state.view_mode||(viewMode==='single'&&d.view_label!==app.state.selected_beam))return;
+    if(seq!==app.spectrumRequest||app.scopePending||profileWanted!==band.visible||epoch!==app.state.mask_epoch||group!==app.state.group.key||d.group_key!==group||requested!==$('#applyAuto').checked||d.view_mode!==app.state.view_mode||(viewMode==='single'&&d.view_label!==app.state.selected_beam))return;
     if(viewMode==='mean'&&d.pol0.length)app.meanSpectrum=d;
     if(d.mean_pol0?.length)app.meanSpectrum={...d,view_mode:'mean',view_label:'19-beam Mean',pol0:d.mean_pol0,pol1:d.mean_pol1};
-    app.spectrumKey=key;app.spectrumRevision=d.revision;drawSpectrum(d);
+    app.spectrumKey=profileWanted&&d.selected_ready&&!d.updating&&!d.band_profile?null:key;
+    app.spectrumRevision=d.revision;drawSpectrum(d);
+    if(band.visible && app.view){paintBand(0);paintBand(1);refreshRecordCard();if(app.cursor?.kind==='band')readBand(app.cursor.pol,app.cursor.record+.5)}
   }catch(error){updateViewStatus('频谱更新失败，稍后重试');app.spectrumKey=null}
   finally{app.spectrumInFlight=false;if(app.spectrumPending){app.spectrumPending=false;pollSpectrum()}}
 }
@@ -827,8 +1345,16 @@ function applyState(s,initial=false){
   const prior=app.state,newGroup=!prior||prior.group.key!==s.group.key;
   const newScope=newGroup||prior.view_mode!==s.view_mode||prior.selected_beam!==s.selected_beam;
   app.state=s;
+  document.body.classList.toggle('band-loading',!s.ready);
+  if(newGroup){band.selected=null;band.drag=null;band.cache=[null,null];band.painted=[null,null]}
+  const refit=Boolean(prior&&prior.mask_epoch!==s.mask_epoch&&scales.follow&&!newScope&&s.ready);
+  if(refit){
+    for(const pol of [0,1])if(app.images[pol]){app.imageKeys[pol]=currentImageKey();app.imageQuality[pol]='preview'}
+  }
+  if(newScope||prior?.mask_epoch!==s.mask_epoch||!s.ready){band.drag=null;refreshRecordCard()}
+  if(newScope||prior?.revision!==s.revision||!s.ready){clearCoordinates();cellProbe.cache.clear()}
   $('#badge').textContent=s.phase;$('#badge').className='badge '+s.phase;
-  $('#group').textContent=`${s.group.scan}:${s.group.serial} · ${s.group.beams.length}/19 beams · ${s.dirty?'未保存':'已保存/未修改'}`;
+  $('#group').textContent=`${s.group.scan.startsWith('SYNTHETIC_GRID_DEMO')?'独立体验 · 合成数据 · ':''}${s.group.scan}:${s.group.serial} · ${s.group.beams.length}/19 beams · ${s.dirty?'未保存':'已保存/未修改'}`;
   $('#viewMode').value=s.view_mode||'mean';$('#beamSelect').hidden=s.view_mode!=='single';if(s.selected_beam)$('#beamSelect').value=s.selected_beam;
   const label=s.view_mode==='single'?s.selected_beam:'19-beam Mean';
   $('#invalidLegend').textContent=s.view_mode==='single'?'当前 beam 无有效值（NaN）':'19 beams 均无有效值（NaN，不是负值）';
@@ -837,14 +1363,18 @@ function applyState(s,initial=false){
   const log=$('#log'),nextLog=s.logs.map(x=>`${x.time}  ${x.message}`).join('\n');
   if(log.textContent!==nextLog){const follow=log.scrollHeight-log.scrollTop-log.clientHeight<45;log.textContent=nextLog;if(follow)log.scrollTop=log.scrollHeight}
   document.querySelectorAll('.loading-cover').forEach(cover=>cover.hidden=s.ready);
-  document.querySelectorAll('.toolbar button,.toolbar select,.toolbar input').forEach(b=>b.disabled=Boolean(s.busy||app.navigationPending)&&b.id!=='spectrumShare');
+  document.querySelectorAll('.toolbar button,.toolbar select,.toolbar input').forEach(b=>{const disabled=Boolean(s.busy||app.navigationPending)&&b.id!=='spectrumShare';if(b.disabled!==disabled)b.disabled=disabled});
   updateAutomaticControls();
   $('#viewBack').disabled=s.busy||app.navigationPending||!app.history.length;
-  if(newGroup){invalidateImages();app.meanSpectrum=null;app.spectrumData=null;app.spectrumKey=null;app.history=[];app.referenceFrequency=null;app.view=null}
+  if(newGroup){invalidateImages();app.meanSpectrum=null;app.spectrumData=null;app.spectrumKey=null;app.history=[];app.referenceFrequency=null;app.view=null;app.grid=null;app.drag=null;app.hover=null}
   else if(newScope){invalidateImages();app.spectrumKey=null}
-  if(s.ready&&(!app.view||initial))app.view={f0:s.frequency_range[0],f1:s.frequency_range[1],t0:0,t1:s.shape[0]};
+  if(s.ready&&(!app.view||initial))app.view={f0:frequencyBounds(s)[0],f1:frequencyBounds(s)[1],t0:0,t1:s.shape[0]};
   if(s.ready&&(newScope||!prior?.ready||initial))renderAll();
-  if(s.ready){requestLocalDraw();pollSpectrum();updateViewStatus()}
+  else if(refit){
+    clearTimeout(scales.renderTimer);
+    scales.renderTimer=setTimeout(()=>renderAll(),75);
+  }
+  if(s.ready){if(newScope||prior?.revision!==s.revision||prior?.ready!==s.ready)requestLocalDraw();pollSpectrum();updateViewStatus()}
 }
 async function poll(){
   try{const response=await fetch('/api/state',{cache:'no-store'});if(!response.ok)throw Error(response.statusText);const s=await response.json();applyState(s,!app.state)}catch(error){$('#badge').textContent='disconnected'}
@@ -858,14 +1388,18 @@ async function action(payload,{apply=true}={}){
   }catch(error){toast(error.message,true);throw error}
 }
 function setMode(mode){
+  if(app.drag){if(app.drag.source==='spectrum'||!['frequency','time','box'].includes(app.drag.kind)||!['frequency','time','box'].includes(mode))return;app.drag.kind=mode;requestLocalDraw()}
   app.mode=mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
   const labels={frequency:'频率标记',time:'时间标记',box:'矩形标记',delete:'删除标记',pan:'平移', 'zoom-frequency':'拖选频率放大（不修改 mask）','zoom-time':'拖选时间放大（不修改 mask）'};
   $('#modeHint').textContent=`当前模式：${labels[mode]||mode}`;
 }
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{setMode(b.dataset.mode);$('#displayOptions').open=false});
 async function changeDataView(){
+  band.drag=null;
+  document.body.classList.add('band-loading');
   const seq=++app.scopeRequest,viewMode=$('#viewMode').value,beam=$('#beamSelect').value;
   app.scopePending=true;invalidateImages();app.spectrumRequest++;app.spectrumKey=null;app.colorRanges=[null,null];
+  refreshRecordCard();
   $('#beamSelect').hidden=viewMode!=='single';$('#viewMode').disabled=true;$('#beamSelect').disabled=true;
   document.querySelectorAll('.loading-cover').forEach(cover=>cover.hidden=false);
   if(app.meanSpectrum)drawSpectrum(viewMode==='mean'?app.meanSpectrum:{...app.meanSpectrum,view_mode:'single',pol0:[],pol1:[],mean_pol0:app.meanSpectrum.pol0,mean_pol1:app.meanSpectrum.pol1});
@@ -927,15 +1461,23 @@ function closeSaveConfirmation(){if(app.state?.busy)return;$('#saveConfirm').hid
 $('#cancelSave').onclick=closeSaveConfirmation;
 $('#confirmSave').onclick=async()=>{const b=$('#confirmSave');b.disabled=true;b.textContent='正在保存…';try{const d=await action({action:'save'});$('#saveConfirm').hidden=true;toast(`已保存 JSON + ${Math.max(0,d.paths.length-1)} 个 beam NPZ`);$('#save').focus()}catch{}finally{b.disabled=false;b.textContent='确认并保存'}};
 $('#contrast').onclick=()=>{app.contrast=(app.contrast+1)%4;app.colorRanges=[null,null];$('#contrastLabel').textContent=`对比度 ${app.contrast+1}/4`;renderAll()};
-$('#colorAuto').onclick=()=>{app.colorRanges=[null,null];renderAll()};
-function changeImageScale(delta){app.imageScaleIndex=Math.max(0,Math.min(IMAGE_SCALES.length-1,app.imageScaleIndex+delta));const scale=IMAGE_SCALES[app.imageScaleIndex];$('#dpiScale').textContent=`DPI ${scale.toFixed(2).replace(/\.?0+$/,'')}×`;renderAll()}
+$('#colorAuto').onclick=()=>{app.colorRanges=[null,null];scales.waterfall=[null,null];renderAll()};
+function changeImageScale(delta){app.imageScaleIndex=Math.max(0,Math.min(IMAGE_SCALES.length-1,app.imageScaleIndex+delta));const scale=IMAGE_SCALES[app.imageScaleIndex];$('#dpiScale').textContent=`${scale.toFixed(2).replace(/\.?0+$/,'')}×`;renderAll()}
 $('#dpiDown').onclick=()=>changeImageScale(-1);$('#dpiUp').onclick=()=>changeImageScale(1);
-function changeAutoWidth(delta){app.autoWidth=Math.max(0,Math.min(4,app.autoWidth+delta));$('#rfiWidth').textContent=`宽度 ${2*app.autoWidth+1} px（1–9）`;renderAll()}
+function changeAutoWidth(delta){app.autoWidth=Math.max(0,Math.min(4,app.autoWidth+delta));$('#rfiWidth').textContent=`${2*app.autoWidth+1} px`;renderAll()}
 $('#rfiThin').onclick=()=>changeAutoWidth(-1);$('#rfiThick').onclick=()=>changeAutoWidth(1);
-$('#spectrumY').onchange=()=>{app.spectrumYMode=$('#spectrumY').value;requestLocalDraw()};
-$('#reset').onclick=()=>{if(!app.state?.ready)return;rememberView();app.view={f0:app.state.frequency_range[0],f1:app.state.frequency_range[1],t0:0,t1:app.state.shape[0]};navigationChanged(true)};
+$('#both').onchange=()=>{
+  const drag=band.drag||app.drag;
+  if(drag&&(drag.source==='waterfall'||(drag.source==='band'&&drag.kind==='time'))){
+    drag.both=$('#both').checked;requestLocalDraw();
+  }
+};
+$('#spectrumY').onchange=()=>{app.spectrumYMode=$('#spectrumY').value;storePreference('crafts.spectrumY',app.spectrumYMode);requestLocalDraw()};
+$('#reset').onclick=()=>{if(!app.state?.ready)return;rememberView();app.view={f0:frequencyBounds(app.state)[0],f1:frequencyBounds(app.state)[1],t0:0,t1:app.state.shape[0]};navigationChanged(true)};
 $('#viewBack').onclick=()=>{if(!app.history.length)return;app.view=app.history.pop();$('#viewBack').disabled=!app.history.length;navigationChanged(true)};
 $('#applyAuto').onchange=()=>{
+  clearCoordinates();cellProbe.cache.clear();
+  refreshRecordCard();
   app.spectrumRequest++;app.spectrumKey=null;app.meanSpectrum=null;app.spectrumData=null;app.spectrumDrawCache=null;
   invalidateImages();updateAutomaticControls();
   if(app.state&&app.view){redrawOverlays();drawSpectrum({frequency:[],pol0:[],pol1:[]})}
@@ -946,13 +1488,13 @@ function updateColorDrag(c,event,pol){
   const drag=app.colorDrag;if(!drag||drag.pol!==pol)return false;
   const r=c.getBoundingClientRect(),p=plotRect(c),y=(event.clientY-r.top)*c.height/r.height,base=drag.base,span=base[1]-base[0],value=Math.max(base[0],Math.min(base[1],base[1]-(y-p.y)/p.h*span)),range=[...(app.colorRanges[pol]||app.limits[pol])],gap=Math.max(span*.005,Number.EPSILON);
   if(drag.handle==='lo')range[0]=Math.min(value,range[1]-gap);else range[1]=Math.max(value,range[0]+gap);
-  app.colorRanges[pol]=range;$('#coord').textContent=`Pol${pol} 色标 ${nice(range[0],3)} – ${nice(range[1],3)} K`;
+  app.colorRanges[pol]=range;clearCoordinates();setCoordinates(`Pol ${pol} 色标`,`${nice(range[0],3)} – ${nice(range[1],3)} K`);
   // Keep the current bitmap while the handle moves; request recoloring on release.
   for(let i=0;i<2;i++)if(app.images[i])app.imageKeys[i]=currentImageKey();
   app.imageQuality[pol]='preview';drawPanel(pol);return true;
 }
 function handleWheel(c,event){
-  if(!app.state?.ready||app.scopePending||app.navigationPending||app.state.busy||app.drag||!$('#navigateConfirm').hidden||!$('#saveConfirm').hidden||(!event.altKey&&!event.shiftKey))return;
+  if(!app.state?.ready||app.scopePending||app.navigationPending||app.state.busy||band.drag||app.drag||!$('#navigateConfirm').hidden||!$('#saveConfirm').hidden||(!event.altKey&&!event.shiftKey))return;
   const d=dataAt(c,event);if(!d.inside)return;event.preventDefault();
   if(!app.wheelActive){rememberView();app.wheelActive=true}
   const axis=event.shiftKey?'time':'frequency',anchor=axis==='time'?d.t:d.f;
@@ -960,20 +1502,20 @@ function handleWheel(c,event){
 }
 canvases.forEach((c,pol)=>{
   c.addEventListener('pointerdown',e=>{
-    if(e.button!==0||!app.state?.ready||app.state.busy||app.scopePending||app.navigationPending||!$('#saveConfirm').hidden||!$('#navigateConfirm').hidden)return;
+    if(e.button!==0||band.drag||app.drag||!app.state?.ready||app.state.busy||app.scopePending||app.navigationPending||!$('#saveConfirm').hidden||!$('#navigateConfirm').hidden)return;
     const kind=gestureKind(e,app.mode),d=dataAt(c,e);
     if(!e.altKey&&!e.shiftKey){const hit=colorbarHit(c,e,pol);if(hit){c.setPointerCapture(e.pointerId);app.colorRanges[pol]=[...(app.colorRanges[pol]||app.limits[pol])];app.colorDrag={pol,handle:hit.handle,base:hit.base};updateColorDrag(c,e,pol);return}}
     if(!d.inside)return;
-    if(!kind.startsWith('zoom-')&&kind!=='pan'&&!viewIsClear()){toast('正在更新清晰视图，请稍候再标记。');return}
+    if(!kind.startsWith('zoom-')&&kind!=='pan'&&(!viewIsClear()||!app.grid)){toast('正在更新清晰视图，请稍候再标记。');return}
     e.preventDefault();c.focus({preventScroll:true});c.setPointerCapture(e.pointerId);
-    app.drag={pol,pointerId:e.pointerId,kind,start:d,now:d,base:{...app.view},remembered:false};
+    app.hover=null;app.drag={source:'waterfall',pol,pointerId:e.pointerId,kind,both:$('#both').checked,start:d,now:d,base:{...app.view},remembered:false,context:selectionContext()};requestLocalDraw();
   });
   c.addEventListener('pointermove',e=>{
     if(updateColorDrag(c,e,pol))return;
     if(!app.state?.ready||!app.view)return;
     const d=dataAt(c,e),kind=gestureKind(e,app.mode);
     c.style.cursor=colorbarHit(c,e,pol)?'ns-resize':kind==='zoom-frequency'?'ew-resize':kind==='zoom-time'?'ns-resize':kind==='pan'?'grab':'crosshair';
-    if(d.inside)$('#coord').textContent=`${nice(d.f,4)} MHz · record ${Math.round(d.t)}`;
+    if(d.inside&&app.grid&&!app.state.busy&&!app.scopePending){const cell=cellAt(d);readWaterfallCell(pol,cell);if(!app.drag&&(!app.hover||app.hover.c!==cell.c||app.hover.r!==cell.r||app.hover.pol!==pol)){app.hover={...cell,pol};requestLocalDraw()}}
     if(!app.drag||app.drag.pol!==pol||app.drag.pointerId!==e.pointerId)return;
     app.drag.now=d;
     if(app.drag.kind==='pan'){
@@ -985,24 +1527,46 @@ canvases.forEach((c,pol)=>{
   c.addEventListener('pointerup',async e=>{
     if(app.colorDrag?.pol===pol){updateColorDrag(c,e,pol);app.colorDrag=null;renderAll();return}
     if(!app.drag||app.drag.pol!==pol||app.drag.pointerId!==e.pointerId)return;
-    const drag=app.drag,d=dataAt(c,e),p=plotRect(c);app.drag=null;
+    const drag=app.drag,d=dataAt(c,e),p=plotRect(c);drag.now=d;app.drag=null;requestLocalDraw();
     const dx=Math.abs(d.x-drag.start.x),dy=Math.abs(d.y-drag.start.y),threshold=3*p.dpr;
     if(drag.kind==='pan'){navigationChanged(true);return}
     if(drag.kind.startsWith('zoom-')){
       if((drag.kind!=='zoom-time'&&dx<threshold)||(drag.kind!=='zoom-frequency'&&dy<threshold)){requestLocalDraw();return}
       rememberView();app.view=rangeZoomView(drag.base,drag.kind,drag.start,d,app.state);navigationChanged(true);return;
     }
-    if(dx<threshold||dy<threshold){requestLocalDraw();return}
-    try{await action({action:'edit',mode:drag.kind,pol,both:$('#both').checked,f0:drag.start.f,f1:d.f,t0:drag.start.t,t1:d.t})}catch{}
+    if(!sufficientDrag(drag,d,p))return;
+    try{await action(editPayload(drag))}catch{}
   });
-  c.addEventListener('pointercancel',()=>{app.drag=null;app.colorDrag=null;navigationChanged(true)});
+  c.addEventListener('pointercancel',()=>{const navigation=app.colorDrag||app.drag?.kind==='pan';app.drag=null;app.colorDrag=null;app.hover=null;if(navigation)navigationChanged(true);else requestLocalDraw()});
+  c.addEventListener('pointerleave',()=>{if(!app.drag){app.hover=null;clearCoordinates();requestLocalDraw()}});
   c.addEventListener('wheel',e=>handleWheel(c,e),{passive:false});
 });
-$('#spectrum').addEventListener('mousemove',e=>{if(!app.state?.ready)return;const d=dataAt($('#spectrum'),e);if(d.inside)$('#coord').textContent=`${nice(d.f,4)} MHz · mean spectrum`});
+$('#spectrum').addEventListener('pointerdown',e=>{
+  if(e.button!==0||!app.state?.ready||app.state.busy||app.scopePending||app.navigationPending||app.drag||band.drag||!$('#saveConfirm').hidden||!$('#navigateConfirm').hidden)return;
+  const c=$('#spectrum'),d=dataAt(c,e);if(!d.inside)return;
+  if(!app.grid||!viewIsClear()){toast('正在更新清晰视图，请稍候再标记。');return}
+  e.preventDefault();c.focus({preventScroll:true});c.setPointerCapture(e.pointerId);app.hover=null;
+  app.drag={source:'spectrum',pol:0,pointerId:e.pointerId,kind:e.altKey?'zoom-frequency':'frequency',both:true,start:d,now:d,base:{...app.view},context:selectionContext()};requestLocalDraw();
+});
+$('#spectrum').addEventListener('pointermove',e=>{
+  if(!app.state?.ready||!app.grid)return;const d=dataAt($('#spectrum'),e);
+  if(d.inside&&!app.state.busy&&!app.scopePending)readSpectrumCell(channelAt(d.f));
+  if(app.drag?.source==='spectrum'&&app.drag.pointerId===e.pointerId){app.drag.now=d;requestLocalDraw()}
+});
+$('#spectrum').addEventListener('pointerup',async e=>{
+  if(app.drag?.source!=='spectrum'||app.drag.pointerId!==e.pointerId)return;
+  const c=$('#spectrum'),drag=app.drag,d=dataAt(c,e),p=plotRect(c);drag.now=d;app.drag=null;requestLocalDraw();
+  const moved=sufficientDrag(drag,d,p);app.spectrumDragged=moved;
+  if(!moved)return;
+  if(drag.kind==='zoom-frequency'){rememberView();app.view=rangeZoomView(drag.base,drag.kind,drag.start,d,app.state);navigationChanged(true);return}
+  try{await action(editPayload(drag))}catch{}
+});
+$('#spectrum').addEventListener('pointercancel',()=>{app.drag=null;app.spectrumDragged=true;requestLocalDraw()});
+$('#spectrum').addEventListener('pointerleave',()=>{if(!app.drag)clearCoordinates()});
 $('#spectrum').addEventListener('click',e=>{
-  if(!app.state?.ready)return;const d=dataAt($('#spectrum'),e);if(!d.inside)return;
-  const origin=app.state.frequency_range[0],step=Math.abs(app.state.frequency_step_mhz||((app.state.frequency_range[1]-origin)/(app.state.shape[1]-1))),index=Math.max(0,Math.min(app.state.shape[1]-1,Math.round((d.f-origin)/step)));
-  app.referenceFrequency=origin+index*step;$('#coord').textContent=`参考 channel ${index} · ${nice(app.referenceFrequency,4)} MHz`;requestLocalDraw();
+  if(app.spectrumDragged){app.spectrumDragged=false;return}
+  if(!app.state?.ready||!app.grid||e.altKey||e.shiftKey)return;const d=dataAt($('#spectrum'),e);if(!d.inside)return;
+  const index=channelAt(d.f);app.referenceFrequency=app.grid.frequency[index];readSpectrumCell(index);requestLocalDraw();
 });
 $('#spectrum').addEventListener('wheel',e=>{if(e.altKey&&!e.shiftKey)handleWheel($('#spectrum'),e)},{passive:false});
 function clampView(){app.view=constrainView(app.view,app.state)}
@@ -1018,7 +1582,119 @@ function setSidebarCollapsed(collapsed,save=true){
   if(save){app.sidebarUserChoice=true;storePreference('crafts.sidebarCollapsed',collapsed?'1':'0')}
 }
 function setSpectrumShare(value,save=true){const share=Math.max(18,Math.min(40,Number(value)||24));document.documentElement.style.setProperty('--spectrum-share',`${share}%`);$('#spectrumShare').value=String(share);$('#spectrumShareValue').textContent=`${share}%`;if(save)storePreference('crafts.spectrumShare',share)}
+function setBandWidth(value,save){
+  const available=$('.plot-stack').getBoundingClientRect().width;
+  const maximum=available?Math.min(340,Math.floor(available*.32)):340;
+  band.width=Math.max(Math.min(104,maximum),Math.min(maximum,Math.round(Number(value)||178)));
+  document.documentElement.style.setProperty('--band-width',band.width+'px');
+  $('#bandWidth').min=String(Math.min(104,maximum));$('#bandWidth').max=String(maximum);
+  $('#bandWidth').value=String(band.width);$('#bandWidthText').textContent=band.width+' px';
+  {
+    const grip=$('#bandGrip');
+    grip.setAttribute('aria-valuemin',String(Math.min(104,maximum)));
+    grip.setAttribute('aria-valuemax',String(maximum));grip.setAttribute('aria-valuenow',String(band.width));
+  }
+  if(save)storePreference('crafts.bandWidth',band.width);
+  if(app.view)requestLocalDraw();
+}
+
+function initBands(){
+  const button=$('#bandToggle'),slider=$('#bandWidth');
+  function show(on){
+    band.visible=on;band.drag=null;
+    document.body.classList.toggle('band-hidden',!on);
+    button.setAttribute('aria-pressed',String(on));
+  }
+  show(storedPreference('crafts.bandVisible','1')==='1');
+  setBandWidth(storedPreference('crafts.bandWidth',178),false);
+  button.onclick=()=>{
+    show(!band.visible);storePreference('crafts.bandVisible',band.visible?'1':'0');
+    clearCoordinates();app.spectrumKey=null;requestLocalDraw();renderAll();pollSpectrum(true);
+  };
+  slider.oninput=()=>{band.resizing=true;setBandWidth(slider.value,false)};
+  slider.onchange=()=>{band.resizing=false;setBandWidth(slider.value,true);renderAll()};
+  {
+    const grip=$('#bandGrip'),canvas=$('#band0');
+    let resizing=null;
+    grip.addEventListener('pointerdown',event=>{
+      if(event.button!==0||app.drag||band.drag)return;
+      event.preventDefault();grip.setPointerCapture(event.pointerId);
+      resizing={id:event.pointerId,x:event.clientX,width:canvas.getBoundingClientRect().width+2};
+      band.resizing=true;document.body.classList.add('resizing-band');
+    });
+    grip.addEventListener('pointermove',event=>{
+      if(resizing?.id===event.pointerId)setBandWidth(resizing.width+resizing.x-event.clientX,false);
+    });
+    const finish=event=>{
+      if(!resizing||resizing.id!==event.pointerId)return;
+      resizing=null;band.resizing=false;document.body.classList.remove('resizing-band');
+      setBandWidth(band.width,true);renderAll();
+    };
+    grip.addEventListener('pointerup',finish);grip.addEventListener('pointercancel',finish);grip.addEventListener('lostpointercapture',finish);
+    grip.addEventListener('keydown',event=>{
+      if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();setBandWidth(band.width+(event.key==='ArrowLeft'?12:-12),true);renderAll()}
+    });
+
+  }
+  for(const pol of [0,1]){
+    const canvas=$('#band'+pol);
+    const available=()=>band.visible&&app.state?.ready&&app.view&&!app.state.busy&&!app.scopePending&&!app.navigationPending&&!app.drag&&!app.colorDrag&&!band.resizing&&$('#saveConfirm').hidden&&$('#navigateConfirm').hidden;
+    canvas.addEventListener('pointerdown',event=>{
+      if(!available()||event.button!==0||band.drag||event.altKey||event.ctrlKey||event.metaKey)return;
+      const point=bandRecordAt(canvas,event);if(!point.inside)return;
+      const kind=event.shiftKey||app.mode==='zoom-time'?'zoom-time':'time';
+      if(kind==='time'&&(!viewIsClear()||!app.grid||!bandData())){
+        toast('侧图正在更新，请稍后标记。');return;
+      }
+      event.preventDefault();canvas.focus({preventScroll:true});canvas.setPointerCapture(event.pointerId);
+      app.hover=null;
+      band.drag={source:'band',kind,pol,id:event.pointerId,both:$('#both').checked,context:selectionContext(),
+        start:point.t,end:point.t,startY:event.clientY,base:{...app.view}};requestLocalDraw();
+    });
+    canvas.addEventListener('pointermove',event=>{
+      if(!available())return;
+      const point=bandRecordAt(canvas,event),drag=band.drag;
+      if(drag?.id===event.pointerId&&drag.pol===pol){drag.end=point.t;requestLocalDraw()}
+      if(point.inside||drag)readBand(pol,point.t);
+    });
+    canvas.addEventListener('pointerup',async event=>{
+      const drag=band.drag;if(!drag||drag.pol!==pol||drag.id!==event.pointerId)return;
+      band.drag=null;requestLocalDraw();if(!available())return;
+      const {t}=bandRecordAt(canvas,event);
+      drag.end=t;
+      if(Math.abs(event.clientY-drag.startY)<minimumDrag()){band.selected=readBand(pol,t);refreshRecordCard();return}
+      if(drag.kind==='zoom-time'){
+        const [low,high]=bandRows(drag.start,t);
+        rememberView();app.view=constrainView({...drag.base,t0:low,t1:high},app.state);navigationChanged(true);return;
+      }
+      if(!sameView(drag.base,app.view)||!viewIsClear()||!bandData())return;
+      try{await action(editPayload(drag))}catch{}
+    });
+    const cancel=event=>{if(band.drag?.pol===pol&&band.drag.id===event.pointerId){band.drag=null;requestLocalDraw()}};
+    canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
+    canvas.addEventListener('pointerleave',()=>{if(!band.drag&&app.cursor?.kind==='band')clearCoordinates()});
+    canvas.addEventListener('wheel',event=>{
+      if(!available()||band.drag)return;const point=bandRecordAt(canvas,event);if(!point.inside)return;
+      event.preventDefault();if(!app.wheelActive){rememberView();app.wheelActive=true}
+      app.view=zoomAt(app.view,'time',point.t,wheelScale(event,canvas.clientHeight),app.state);navigationChanged();
+    },{passive:false});
+    canvas.addEventListener('keydown',event=>{
+      if(!available()||band.selected===null||!['ArrowUp','ArrowDown'].includes(event.key))return;
+      event.preventDefault();
+      const centre=band.selected+(event.key==='ArrowUp'?1:-1)+.5;
+      if(centre<app.view.t0||centre>=app.view.t1)return;
+      band.selected=readBand(pol,centre);
+      refreshRecordCard();requestLocalDraw();
+    });
+  }
+}
+
 function initLayout(){
+  initDisplayPreferences();initBands();
+  $('#cellGrid').checked=storedPreference('crafts.cellGrid','1')==='1';$('#cellGrid').onchange=()=>{storePreference('crafts.cellGrid',$('#cellGrid').checked?'1':'0');requestLocalDraw()};
+  $('#dragThreshold').value=String(Math.max(1,Math.min(12,Number(storedPreference('crafts.dragThreshold',3))||3)));
+  $('#dragThresholdValue').textContent=minimumDrag()+' px';
+  $('#dragThreshold').oninput=()=>{storePreference('crafts.dragThreshold',minimumDrag());$('#dragThresholdValue').textContent=minimumDrag()+' px'};
   setSidebarWidth(storedPreference('crafts.sidebarWidth',280),false);setSpectrumShare(storedPreference('crafts.spectrumShare',24),false);
   const saved=storedPreference('crafts.sidebarCollapsed',null);app.sidebarUserChoice=saved!==null;setSidebarCollapsed(saved===null?innerWidth<980:saved==='1',false);
   $('#toggleSidebar').onclick=()=>setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
@@ -1039,11 +1715,17 @@ addEventListener('keydown',e=>{
     return;
   }
   if(e.isComposing||e.ctrlKey||e.metaKey||e.altKey||e.target.isContentEditable)return;
+  if(e.key==='Escape'&&$('#displayOptions').open){
+    e.preventDefault();$('#displayOptions').open=false;$('#settingsToggle').focus();return;
+  }
   if(e.target.matches('input,select,textarea')&&!['applyAuto','showAuto','both'].includes(e.target.id))return;
-  if(e.key==='Escape'){app.drag=null;app.colorDrag=null;$('#displayOptions').open=false;requestLocalDraw();return}
+  if(e.key==='Escape'){app.drag=null;app.colorDrag=null;band.drag=null;$('#displayOptions').open=false;requestLocalDraw();return}
   if(app.state?.busy||app.scopePending||app.navigationPending||e.repeat||!app.state?.ready)return;
   const binding=shortcutFromEvent(e),item=SHORTCUTS.find(a=>binding&&keyBindings[a.id]===binding);
-  if(!item)return;
+  if(!item||band.resizing)return;
+  if(band.drag&&(band.drag.kind!=='time'||item.id!=='both')){e.preventDefault();return}
+  if(app.drag&&!['frequency','time','box','both'].includes(item.id)){e.preventDefault();return}
+  if(app.drag?.source==='spectrum'&&item.id==='both'){e.preventDefault();app.drag.both=!app.drag.both;requestLocalDraw();return}
   e.preventDefault();const control=$('#'+item.control);
   if(control.disabled){if(item.id==='showAuto')toast('先开启“使用自动 mask”');return}
   if(item.toggle){control.checked=!control.checked;control.onchange?.();toast(`${item.label}：${control.checked?'开启':'关闭'}`)}
@@ -1052,6 +1734,7 @@ addEventListener('keydown',e=>{
 });
 addEventListener('beforeunload',event=>{if(app.state?.dirty||app.navigationPending||app.state?.phase==='saving'){event.preventDefault();event.returnValue=''}});
 initLayout();
+initSettingsTabs();
 initShortcuts();
 new ResizeObserver(()=>{if(app.state?.ready)navigationChanged()}).observe($('.plot-stack'));
 poll();

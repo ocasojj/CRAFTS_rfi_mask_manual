@@ -244,7 +244,7 @@ def resolve_occupied_port(port, editor, requested, *, read_only=False):
             raise ValueError('端口对应进程已变化；未进行操作，请重新运行脚本。')
         if choice == '1':
             print(f'继续使用旧会话：http://127.0.0.1:{port}')
-            print(f'Mac 本地如需重建转发：ssh -N -L {port}:127.0.0.1:{port} CRAFTS')
+            print(f'Mac 本地如需重建转发：ssh -N -L {port}:127.0.0.1:{port} YOUR_SSH_HOST')
             print('本次请求没有另行启动；请在现有网页中继续。')
             return False
         reason = restart_block_reason(fresh)

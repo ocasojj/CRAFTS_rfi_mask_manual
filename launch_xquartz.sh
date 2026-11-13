@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+remote_host="${CRAFTS_SSH_HOST:?Set CRAFTS_SSH_HOST to your SSH alias}"
+remote_app="${CRAFTS_REMOTE_APP:?Set CRAFTS_REMOTE_APP to the remote checkout}"
+input_root="${CRAFTS_INPUT_DIR:?Set CRAFTS_INPUT_DIR to the remote input directory}"
+mask_root="${CRAFTS_MASK_DIR:?Set CRAFTS_MASK_DIR to the remote output directory}"
+remote_python="${CRAFTS_REMOTE_PYTHON:-python3}"
+# Escape literal quotes for the remote shell command.
+for remote_key in remote_app input_root mask_root remote_python; do
+  remote_value=${!remote_key}
+  printf -v "$remote_key" '%s' "${remote_value//\'/\'\\\'\'}"
+done
+
 target="${1:-Dec+2654_22_09:0002}"
 case "$target" in
   *[!A-Za-z0-9+_.:-]*)
@@ -24,9 +35,5 @@ if [[ -z "$xquartz_display" ]]; then
 fi
 export DISPLAY="$xquartz_display"
 
-remote_app="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/crafts_rfi_mask_manual_x11"
-input_root="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/gzn_20260831/five_stripes_current_modules_0001_0010_v2"
-mask_root="/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/crafts_rfi_manual_masks"
-
-exec ssh -Y crafts \
-  "mkdir -p '$mask_root' && cd '$remote_app' && exec env MPLBACKEND=TkAgg PYTHONUNBUFFERED=1 /home/zhouyunfan/anaconda3/bin/python crafts_tod_visual_mask.py '$target' --input-dir '$input_root' --mask-dir '$mask_root' --require-all-auto-masks --block-records 64"
+exec ssh -Y "$remote_host" \
+  "mkdir -p '$mask_root' && cd '$remote_app' && exec env MPLBACKEND=TkAgg PYTHONUNBUFFERED=1 '$remote_python' crafts_tod_visual_mask.py '$target' --input-dir '$input_root' --mask-dir '$mask_root' --require-all-auto-masks --block-records 64"

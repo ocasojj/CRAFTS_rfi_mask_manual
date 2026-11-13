@@ -200,7 +200,7 @@ function makeHarness(storage = new Map()) {
   };
   const blank = () => ({frequency_ranges_mhz: [], time_ranges_records: [], boxes: []});
   h.app.state = {
-    ready: true, busy: false, phase: 'ready', dirty: false, revision: 0, spectrum_revision: 0,
+    ready: true, busy: false, phase: 'ready', dirty: false, revision: 0, spectrum_revision: 0, mask_epoch: 0,
     group: {key: 'fixture_W_0001_T', scan: 'fixture', serial: '0001', beams: ['M01', 'M02']},
     index: 0, group_count: 2, groups: [{index: 0, serial: '0001'}, {index: 1, serial: '0002'}],
     frequency_range: [1000, 1100], frequency_step_mhz: .1, shape: [200, 1001, 2],
@@ -208,7 +208,8 @@ function makeHarness(storage = new Map()) {
     auto_available: {one_channel: 19, sat1380: 19}, logs: [], message: 'fixture',
   };
   h.app.view = {f0: 1000, f1: 1100, t0: 0, t1: 200};
-  h.app.spectrumKey = JSON.stringify(['fixture_W_0001_T', 0, true, 'mean', 'M01']);
+  h.fn('installGrid')({group_key:h.app.state.group.key,frequency:Array.from({length:1001},(_,i)=>1000+i*.1)});
+  h.app.spectrumKey = JSON.stringify(['fixture_W_0001_T', 0, true, 'mean', 'M01', true, 0]);
   h.primeImages = () => {
     h.app.images = [{close() {}}, {close() {}}];
     h.app.imageViews = [plain(h.app.view), plain(h.app.view)];
@@ -263,7 +264,9 @@ test('ordinary mask drag posts exactly one edit with scientific coordinates and 
   const actions = h.requests.filter(request => request.url.pathname === '/api/action');
   assert.equal(actions.length, 1);
   assert.deepEqual(JSON.parse(actions[0].options.body), {
-    action: 'edit', mode: 'box', pol: 1, both: true, f0: 1020, f1: 1080, t0: 40, t1: 160,
+    action: 'edit', mode: 'box', pol: 1, both: true,
+    cells: {c0:200,c1:801,r0:40,r1:161}, group_key:h.app.state.group.key,
+    revision:0, view_mode:'mean', beam:'M01',
   });
   assert.deepEqual(plain(h.app.view), {f0: 1000, f1: 1100, t0: 0, t1: 200});
 });
@@ -519,7 +522,7 @@ test('automatic master switch updates all three plots, preserves manual edits an
       }
       assert.equal(show.checked, overlay, 'master must remember independent overlay preference');
       assert.equal(show.disabled, !enabled);
-      assert.match(h.elements.get('autoMaskStatus').textContent, enabled ? /三图已启用/ : /三图已停用/);
+      assert.match(h.elements.get('autoMaskStatus').textContent, enabled ? /自动 mask 已启用/ : /自动 mask 已停用/);
       assert.deepEqual(plain(h.app.spectrumData.pol0), enabled ? [1, 2] : [10, 20]);
       assert.deepEqual(plain(h.app.state.document), manualBefore);
       assert.equal(h.app.state.dirty, true);
@@ -734,4 +737,236 @@ test('clean navigation needs no dialog; dirty page unload is guarded', async () 
   h.app.state.dirty = true; assert.equal(h.globalEvent('beforeunload').prevented, true);
   h.app.state.dirty = false; h.app.navigationPending = true;
   assert.equal(h.globalEvent('beforeunload').prevented, true);
+});
+
+test('cell selection includes endpoint cells, handles reverse drags and clips to the native grid', async () => {
+  const h=makeHarness(),c=h.elements.get('pol0');h.app.mode='box';
+  await c.fire('pointerdown',h.at(1080.02,160.2));
+  await c.fire('pointermove',h.at(1020.01,40.1));
+  assert.deepEqual(plain(h.fn('selectedCells')()),{c0:200,c1:801,r0:40,r1:161});
+  await c.fire('pointerup',h.at(900,-30));
+  const payload=JSON.parse(h.requests[0].options.body);
+  assert.deepEqual(payload.cells,{c0:0,c1:801,r0:0,r1:161});
+});
+
+test('in-drag custom F/T/B and P bindings update the preview and the single committed action', async () => {
+  const h=makeHarness(),c=h.elements.get('pol1');
+  h.fn('setShortcutBinding')('time','k');
+  await c.fire('pointerdown',h.at(1020.01,40.1));
+  await c.fire('pointermove',h.at(1080.02,160.2));
+  h.keyDown('k');h.keyDown('p');
+  assert.equal(h.app.drag.kind,'time');assert.equal(h.app.drag.both,true);
+  assert.deepEqual(plain(h.fn('selectedCells')()),{c0:0,c1:1001,r0:40,r1:161});
+  h.keyDown('b');h.keyDown('s'); // Saving must not interrupt an in-progress gesture.
+  assert.equal(h.requests.length,0);
+  await c.fire('pointerup',h.at(1080.02,160.2));
+  assert.equal(h.requests.length,1);
+  assert.equal(JSON.parse(h.requests[0].options.body).mode,'box');
+  assert.equal(JSON.parse(h.requests[0].options.body).both,true);
+});
+
+test('frequency and time selections accept straight drags but preserve the screen-distance guard', async () => {
+  for(const mode of ['frequency','time']){
+    const h=makeHarness(),c=h.elements.get('pol0');h.app.mode=mode;
+    await c.fire('pointerdown',h.at(1020,40));await c.fire('pointerup',h.at(1020.01,40.01));
+    assert.equal(h.requests.length,0);
+    await c.fire('pointerdown',h.at(1020,40));await c.fire('pointerup',h.at(mode==='frequency'?1080:1020,mode==='time'?160:40));
+    assert.equal(h.requests.length,1);
+  }
+});
+
+test('spectrum drag previews and commits a whole-frequency dual-polarization selection by default', async () => {
+  const h=makeHarness(),c=h.elements.get('spectrum');
+  const point=f=>({clientX:62+(f-1000)*10,clientY:70});
+  await c.fire('pointerdown',point(1020.01));await c.fire('pointermove',point(1080.02));
+  assert.equal(h.app.drag.both,true);assert.equal(h.elements.get('both').checked,false);
+  assert.deepEqual(plain(h.fn('selectedCells')()),{c0:200,c1:801,r0:0,r1:200});
+  await c.fire('pointerup',point(1080.02));
+  assert.equal(h.requests.length,1);
+  const p=JSON.parse(h.requests[0].options.body);
+  assert.equal(p.mode,'frequency');assert.equal(p.both,true);
+  await c.fire('click',point(1080.02));
+  assert.equal(h.requests.length,1,'the click after release must not submit another mask');
+  assert.equal(h.app.referenceFrequency,null,'a drag must not move the reference line');
+});
+
+test('spectrum click and sub-threshold motion place only a native-channel reference, never a mask', async () => {
+  for(const delta of [0,.1]){
+    const h=makeHarness(),c=h.elements.get('spectrum');
+    const point=f=>({clientX:62+(f-1000)*10,clientY:70});
+    const before=plain(h.app.state.document);
+    await c.fire('pointerdown',point(1020.01));
+    await c.fire('pointermove',point(1020.01+delta));
+    await c.fire('pointerup',point(1020.01+delta));
+    await c.fire('click',point(1020.01+delta));
+    near(h.app.referenceFrequency,delta?1020.1:1020);
+    assert.equal(h.requests.length,0);
+    assert.deepEqual(plain(h.app.state.document),before);
+    assert.equal(h.app.state.dirty,false);
+  }
+});
+
+test('Escape and pointer cancellation never send a cell selection to the server', async () => {
+  for(const cancel of ['escape','pointercancel']){
+    const h=makeHarness(),c=h.elements.get('pol0');
+    await c.fire('pointerdown',h.at(1020,40));await c.fire('pointermove',h.at(1080,160));
+    if(cancel==='escape')h.keyDown('Escape');else await c.fire('pointercancel');
+    await c.fire('pointerup',h.at(1080,160));assert.equal(h.requests.length,0);
+  }
+});
+
+test('dense grids stay bounded and mouse-move events coalesce without network requests', async () => {
+  const h=makeHarness(),c=h.elements.get('pol0');h.app.mode='box';
+  await c.fire('pointerdown',h.at(1020,40));
+  for(let i=0;i<500;i++)await c.fire('pointermove',h.at(1020+i*.01,40+i*.01));
+  assert.equal(h.requests.length,0);assert.equal(h.frames.length,1);
+  h.flushFrames();
+  assert.ok(c.context.calls.filter(x=>x.method==='lineTo').length<100,'do not draw thousands of invisible cell borders');
+});
+
+function probeResponse(request, value=2.5){
+  const p=request.url.searchParams;
+  return {group_key:p.get('group_key'),revision:Number(p.get('revision')),view_mode:p.get('view_mode'),beam:p.get('beam'),
+    c:Number(p.get('c')),r:Number(p.get('r')),pol:Number(p.get('pol')),apply_auto:p.get('apply_auto')==='1',
+    delta_k:value,temperature_k:value===null?null:value+20,manual_bad:false,auto_flagged_beams:0,total_beams:19};
+}
+
+test('same-cell movement uses one bounded read and cached exact values without image or mask requests', async () => {
+  const h=makeHarness(),c=h.elements.get('pol0');
+  h.fetchHandler=r=>{assert.equal(r.url.pathname,'/api/cell');return Promise.resolve(h.response(probeResponse(r,0)))};
+  for(let i=0;i<100;i++)await c.fire('pointermove',h.at(1020.01,40.1));
+  assert.equal(h.frames.length,1);
+  h.advance(0);await h.settle();
+  assert.equal(h.requests.length,1);assert.match(h.elements.get('coordValues').textContent,/0\.0000 K/);
+  for(let i=0;i<100;i++)await c.fire('pointermove',h.at(1020.02,40.2));
+  h.advance(100);await h.settle();assert.equal(h.requests.length,1);
+  await c.fire('pointerleave');await c.fire('pointermove',h.at(1020.01,40.1));
+  h.advance(100);await h.settle();assert.equal(h.requests.length,1,'revisiting cached cell is local');
+});
+
+test('hover reads retain only the latest pending cell and reject late responses', async () => {
+  const h=makeHarness(),pending=[];
+  h.fetchHandler=r=>new Promise(resolve=>pending.push({r,resolve}));
+  h.fn('readWaterfallCell')(0,{c:10,r:4});h.advance(0);
+  for(let c=11;c<=100;c++)h.fn('readWaterfallCell')(0,{c,r:4});
+  assert.equal(pending.length,1);
+  pending[0].resolve(h.response(probeResponse(pending[0].r,999)));await h.settle();
+  assert.ok(!h.elements.get('coordValues').textContent.includes('999'));
+  h.advance(80);assert.equal(pending.length,2);assert.equal(pending[1].r.url.searchParams.get('c'),'100');
+  pending[1].resolve(h.response(probeResponse(pending[1].r,1.25)));await h.settle();
+  assert.match(h.elements.get('coordValues').textContent,/1\.2500 K/);
+});
+
+test('leaving the view clears pending readout and late values cannot reappear', async () => {
+  const h=makeHarness();let finish,request;
+  h.fetchHandler=r=>new Promise(resolve=>{finish=resolve;request=r});
+  h.fn('readWaterfallCell')(0,{c:10,r:4});h.advance(0);h.fn('clearCoordinates')();
+  assert.equal(request.options.signal.aborted,true);
+  finish(h.response(probeResponse(request,999)));await h.settle();
+  assert.equal(h.elements.get('coordValues').textContent,'—');
+});
+
+test('spectrum hover reads both plotted polarizations locally and reports invalid or stale values', () => {
+  const h=makeHarness();
+  h.app.spectrumData={group_key:h.app.state.group.key,view_mode:'mean',apply_auto:true,selected_ready:true,pol0:[0,12.5],pol1:[null,14.5]};
+  h.fn('readSpectrumCell')(0);
+  assert.match(h.elements.get('coordValues').textContent,/Pol 0 0\.0000 K/);
+  assert.match(h.elements.get('coordValues').textContent,/Pol 1 无有效值/);
+  h.fn('readSpectrumCell')(1);assert.match(h.elements.get('coordValues').textContent,/12\.5000 K/);
+  h.app.spectrumData.updating=true;h.fn('refreshSpectrumCoordinates')();
+  assert.equal(h.elements.get('coordValues').textContent,'频谱更新中…');assert.equal(h.requests.length,0);
+});
+
+test('unchanged status polls schedule no redraw and removed shortcut does not reset user bindings', () => {
+  const h=makeHarness(new Map([['crafts.shortcuts.v1','{"inspectCells":"j","frequency":"k"}']]));
+  assert.equal(h.elements.has('inspectCells'),false);
+  assert.equal(h.elements.get('key-frequency').textContent,'K');
+  h.fn('applyState')(plain(h.app.state));assert.equal(h.frames.length,0);
+  h.fn('applyState')({...plain(h.app.state),revision:1});assert.equal(h.frames.length,1);
+});
+
+test('spectrum selection on the observed CRAFTS axis submits the intended native channel in either drag direction', async () => {
+  for(const index of [10483,10494])for(const reverse of [false,true]){
+    const h=makeHarness(),c=h.elements.get('spectrum'),step=.00762939453125;
+    const frequency=Array.from({length:13016},(_,i)=>1320.0032711029053+i*step);
+    h.app.state.shape=[2048,13016];h.app.grid=null;
+    h.fn('installGrid')({group_key:h.app.state.group.key,frequency});
+    h.app.view={f0:frequency[10480]-.27*step,f1:frequency[10480]+19.73*step,t0:0,t1:2048};h.primeImages();
+    const point=f=>({clientX:62+(f-h.app.view.f0)/(h.app.view.f1-h.app.view.f0)*1000,clientY:70});
+    const a=point(frequency[index]-.1*step),b=point(frequency[index]+.1*step);
+    await c.fire('pointerdown',reverse?b:a);await c.fire('pointerup',reverse?a:b);
+    assert.equal(h.requests.length,1);
+    const payload=JSON.parse(h.requests[0].options.body);
+    assert.deepEqual(payload.cells,{c0:index,c1:index+1,r0:0,r1:2048});
+    assert.equal(payload.both,true);
+  }
+});
+
+test('frequency tick precision follows the viewport and distinguishes deeply zoomed channel positions', () => {
+  const h=makeHarness(),format=h.fn('frequencyTick');
+  assert.equal(format(1400.0203609466553,{f0:1399.95,f1:1400.10}),'1400.020');
+  assert.equal(format(1400.0279903411865,{f0:1399.95,f1:1400.10}),'1400.028');
+  assert.equal(format(1320.003,{f0:1320,f1:1420}),'1320.0');
+});
+
+function primeBand(h){
+  h.app.spectrumData={group_key:h.app.state.group.key,content_revision:h.app.state.mask_epoch,
+    view_mode:h.app.state.view_mode,view_label:h.app.state.selected_beam,apply_auto:true,
+    band_profile:{mean_k:[Array(200).fill(19),Array(200).fill(20)],
+      valid_channels:[Array(200).fill(1001),Array(200).fill(1001)],total_channels:1001}};
+}
+
+test('side profile click pins a record; Shift-drag zooms the record axis without an edit', async () => {
+  const h=makeHarness(),c=h.elements.get('band0'),state=h.fn('band');
+  primeBand(h);
+  const at=t=>({clientX:140,clientY:23+(200-t)*1.5});
+  await c.fire('pointerdown',at(58.5));await c.fire('pointerup',at(58.5));
+  assert.equal(state.selected,58);
+  await c.fire('pointerdown',{...at(95.5),shiftKey:true});await c.fire('pointermove',at(31.5));await c.fire('pointerup',at(31.5));
+  assert.deepEqual(plain(h.app.view),{f0:1000,f1:1100,t0:31,t1:96});
+  assert.equal(h.requests.length,0);
+  assert.equal(h.app.state.dirty,false);
+});
+
+test('dragging either side profile submits only the selected polarization(s), rows and active beam', async () => {
+  for(const pol of [0,1])for(const both of [false,true]){
+    const h=makeHarness(),c=h.elements.get('band'+pol);
+    h.app.state.view_mode='single';h.app.state.selected_beam='M07';h.primeImages();primeBand(h);
+    h.app.spectrumKey=JSON.stringify([h.app.state.group.key,0,true,'single','M07',true,0]);
+    h.elements.get('both').checked=both;
+    const at=t=>({clientX:140,clientY:23+(200-t)*1.5});
+    await c.fire('pointerdown',at(71.4));await c.fire('pointermove',at(65.8));
+    assert.equal(h.requests.length,0);
+    assert.deepEqual(plain(h.fn('selectedCells')()),{c0:0,c1:1001,r0:65,r1:72});
+    await c.fire('pointerup',at(65.8));
+    assert.equal(h.requests.length,1);
+    const p=JSON.parse(h.requests[0].options.body);
+    assert.deepEqual(p.cells,{c0:0,c1:1001,r0:65,r1:72});
+    assert.deepEqual([p.action,p.mode,p.pol,p.both,p.beam,p.view_mode],['edit','time',pol,both,'M07','single']);
+  }
+});
+
+test('side marking respects live polarization shortcut, cancellation, stale state and the visible top edge', async () => {
+  const h=makeHarness(),c=h.elements.get('band0');primeBand(h);
+  const start={clientX:140,clientY:170},end={clientX:140,clientY:23};
+  h.app.view.t0=20;h.app.view.t1=40;h.primeImages();
+  await c.fire('pointerdown',start);h.keyDown('p');await c.fire('pointermove',end);
+  assert.equal(h.fn('band').drag.both,true);assert.equal(h.fn('selectedCells')().r1,40);
+  h.keyDown('Escape');await c.fire('pointerup',end);assert.equal(h.requests.length,0);
+  await c.fire('pointerdown',start);await c.fire('pointercancel');await c.fire('pointerup',end);
+  assert.equal(h.requests.length,0);
+  h.app.state.mask_epoch++;await c.fire('pointerdown',start);await c.fire('pointerup',end);
+  assert.equal(h.requests.length,0);
+  h.app.mode='zoom-time';await c.fire('pointerdown',start);await c.fire('pointerup',end);
+  assert.ok(h.app.view.t0>20);assert.equal(h.requests.length,0);
+});
+
+test('profile readouts reject a previous mask or beam, and display zero valid channels explicitly', () => {
+  const h=makeHarness();
+  h.app.spectrumData={group_key:h.app.state.group.key,content_revision:0,view_mode:'mean',apply_auto:true,
+    band_profile:{mean_k:[[null],[0]],valid_channels:[[0],[2]],total_channels:4}};
+  assert.match(h.fn('bandSummary')(0,0),/无有效值.*0\/4/);
+  assert.match(h.fn('bandSummary')(1,0),/0\.0000 K.*2\/4/);
+  h.app.state.mask_epoch++;assert.equal(h.fn('bandData')(),null);
+  h.app.state.mask_epoch=0;h.app.state.view_mode='single';assert.equal(h.fn('bandData')(),null);
 });

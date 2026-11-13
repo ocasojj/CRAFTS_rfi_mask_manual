@@ -1,6 +1,10 @@
 # 定标批次的一键标记入口
 
-`run_rfi_calibration.sh` 使用服务器的 `~/miniforge3/envs/astro` 环境。默认程序位置为 `~/project/crafts_tod_manual_mask_v2/crafts_tod_native_web.py`；可用 `--editor` 指定本仓库中的程序。
+Activate the Python environment before starting the launcher. The wrapper uses
+`python3`, or the interpreter selected by `CRAFTS_PYTHON`. The editor defaults
+to the copy in this checkout. Set `CRAFTS_AUTO_ROOT` (or `--auto-root`) for
+automatic products and `CRAFTS_OUTPUT_ROOT` (or `--output-root`) for manual
+outputs. The default output directory is `rfi_runs` in the working directory.
 
 ## 本地配置
 
@@ -52,10 +56,18 @@ bash run_rfi_calibration.sh <idrift> v1 0001 --check
 Mac 本地建立转发后打开对应网页：
 
 ```bash
-ssh -N -L 8992:127.0.0.1:8992 CRAFTS
+ssh -N -L 8992:127.0.0.1:8992 YOUR_SSH_HOST
 ```
 
 同一扫描、同一 mask 版本仍只允许一个会话；换端口不会绕过版本锁。
+
+## 已核验的历史人工标记
+
+`legacy_import.json` 记录一次性导入的来源、nfile 清单和复制校验信息。启动时会提示曾承接多少个旧人工 nfile，随后按当前版本目录正常载入；不会在每次启动时重新拷贝或覆盖后续标注。独立版本（如 v2）不会自动继承 v1 的导入结果。
+
+历史人工结果复用前必须核对观测日期、频率/MJD/shape 和各 beam 的 mask 内容。导入使用独立副本，保留原始 JSON/NPZ 及其历史来源记录；当前 Web 加载时重新绑定当前 FITS 路径与当前批次自动层，下一次人工保存时正常更新来源元数据。旧自动 mask 不作为当前批次的替代品。
+
+若存在 `legacy_import_pending.json`，入口拒绝启动，以免把尚未完整发布的导入当成完成状态。该文件应由成功完成校验的导入过程移除，不能靠手动删除来跳过未完成的导入。
 
 ## 验证
 

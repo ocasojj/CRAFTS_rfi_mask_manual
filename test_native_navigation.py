@@ -108,6 +108,25 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(self.state.index, 1)
         self.assertFalse(self.state.dirty)
 
+    def test_imported_document_uses_current_inputs_and_auto_masks_without_rewriting_original_marks(self):
+        legacy = copy.deepcopy(self.before)
+        legacy.done = True
+        legacy.beam_files = {beam:'/legacy/'+Path(path).name for beam,path in legacy.beam_files.items()}
+        legacy.auto_mask_files = {'M01':{'one_channel':'/legacy/automatic.npz'}}
+        path = mask_path(self.state.args.mask_dir, self.groups[0])
+        save_mask_document(path, legacy)
+        original = path.read_bytes()
+        aggregate = self.aggregate()
+        aggregate.auto_mask_files = {'M01':{'one_channel':'/current/one_channel.npz','sat1380':'/current/sat1380.npz'}}
+        with patch.object(web, 'load_beam_averaged_tod_with_auto_masks', return_value=aggregate):
+            asyncio.run(self.state.load())
+        self.assertEqual(self.state.document.polarizations, legacy.polarizations)
+        self.assertEqual(self.state.document.beam_polarizations, legacy.beam_polarizations)
+        self.assertTrue(self.state.document.done)
+        self.assertEqual(self.state.document.auto_mask_files, aggregate.auto_mask_files)
+        self.assertEqual(self.state.document.beam_files, {f.beam:str(f.path.resolve()) for f in self.groups[0].files})
+        self.assertEqual(path.read_bytes(), original)
+
     def test_load_failure_restores_discarded_in_memory_edits_and_current_data(self):
         aggregate = self.state.aggregate
         with patch.object(web, 'load_beam_averaged_tod_with_auto_masks', side_effect=OSError('bad next FITS')):

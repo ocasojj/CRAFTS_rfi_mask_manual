@@ -747,6 +747,18 @@ def masked_time_average(
     A fully frequency-masked channel becomes NaN. Time and box masks remove only
     their selected records, so the remaining samples still contribute.
     """
+    return _masked_average(tod, frequency_mhz, document, additional_mask, beam, axis=0)[0]
+
+
+def masked_frequency_average(
+    tod: np.ndarray, frequency_mhz: np.ndarray, document: MaskDocument,
+    additional_mask: np.ndarray | None = None, beam: str | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Full-band means and valid channel counts, indexed by record and polarization."""
+    return _masked_average(tod, frequency_mhz, document, additional_mask, beam, axis=1)
+
+
+def _masked_average(tod, frequency_mhz, document, additional_mask, beam, *, axis):
     if tod.ndim != 3 or tod.shape[2] < 2:
         raise ValueError("TOD must have shape (time, frequency, polarization>=2)")
     if tod.shape[1] != len(frequency_mhz):
@@ -754,7 +766,9 @@ def masked_time_average(
     if additional_mask is not None and additional_mask.shape != tod.shape:
         raise ValueError("additional_mask must match the TOD shape")
 
-    spectra = np.full((tod.shape[1], 2), np.nan, dtype=np.float64)
+    length = len(frequency_mhz) if axis == 0 else tod.shape[0]
+    means = np.full((length, 2), np.nan, dtype=np.float64)
+    counts = np.empty(means.shape, dtype=np.int64)
     for polarization in (0, 1):
         values = np.asarray(tod[:, :, polarization])
         mask = build_mask(
@@ -763,10 +777,11 @@ def masked_time_average(
         valid = np.isfinite(values) & ~mask
         if additional_mask is not None:
             valid &= ~additional_mask[:, :, polarization]
-        count = np.sum(valid, axis=0, dtype=np.int64)
-        total = np.sum(values, axis=0, dtype=np.float64, where=valid)
-        np.divide(total, count, out=spectra[:, polarization], where=count > 0)
-    return spectra
+        count = valid.sum(axis=axis, dtype=np.int64)
+        counts[:, polarization] = count
+        total = np.sum(values, axis=axis, dtype=np.float64, where=valid)
+        np.divide(total, count, out=means[:, polarization], where=count > 0)
+    return means, counts
 
 
 def _region_counts(polarizations: list[PolarizationMask]) -> dict[str, int]:

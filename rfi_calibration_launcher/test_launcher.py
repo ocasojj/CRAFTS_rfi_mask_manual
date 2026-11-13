@@ -88,6 +88,16 @@ class PreservationTests(unittest.TestCase):
         self.assertEqual({p.name for p in new.iterdir()}, {'run.json'})
         self.assertFalse(self.backups.exists())
 
+    def test_incomplete_import_blocks_start_without_changing_existing_marks(self):
+        marker = self.dest / 'legacy_import_pending.json'
+        marker.write_text('{"audit":"/audit/report.json"}')
+        before = {p.name:p.read_bytes() for p in self.dest.iterdir()}
+        with self.assertRaisesRegex(ValueError, '导入尚未完成'):
+            self.prepare()
+        self.assertEqual(before, {p.name:p.read_bytes() for p in self.dest.iterdir()})
+        marker.unlink()
+        self.prepare()
+
 
 if __name__ == '__main__':
     unittest.main()

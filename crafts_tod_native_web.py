@@ -44,6 +44,7 @@ from crafts_tod_mask import (
     mask_document_region_summary,
     mask_path,
     masked_time_average,
+    masked_frequency_average,
     normalize_document,
     save_beam_mask_products,
     save_mask_document,
@@ -51,15 +52,6 @@ from crafts_tod_mask import (
 
 
 APP_VERSION = "native-web-v1"
-DEFAULT_INPUT_DIR = Path(
-    "/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/"
-    "gzn_20260831/five_stripes_current_modules_0001_0010_v2/server_data/"
-    "ZD2022_1_2/Dec+2654_22_09__20230716"
-)
-DEFAULT_MASK_DIR = Path(
-    "/data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/"
-    "crafts_rfi_manual_masks/Dec+2654_22_09__20230716"
-)
 
 
 def _jsonable_document(document: MaskDocument) -> dict[str, Any]:
@@ -86,6 +78,15 @@ VIRIDIS = _viridis_lut()
 INVALID_RGB = np.asarray((108, 116, 126), dtype=np.uint8)
 
 
+def frequency_cell_edges(frequency: np.ndarray) -> np.ndarray:
+    """Cell boundaries are midpoints of the actual channel centres (MHz)."""
+    if len(frequency) < 2 or not np.all(np.isfinite(frequency)) or np.any(np.diff(frequency) <= 0):
+        raise ValueError("Cell selection requires finite, strictly increasing frequency centres")
+    return np.r_[frequency[0] - (frequency[1] - frequency[0]) / 2,
+                 frequency[:-1] + np.diff(frequency) / 2,
+                 frequency[-1] + (frequency[-1] - frequency[-2]) / 2]
+
+
 def _bounded_indices(length: int, low: int, high: int, maximum: int) -> np.ndarray:
     low = max(0, min(int(low), length - 1))
     high = max(low + 1, min(int(high), length))
@@ -108,17 +109,19 @@ def _mask_pool(
     thickness: int = 1,
 ) -> np.ndarray:
     """Max-pool a mask/count layer so narrow RFI remains visible."""
-    source = np.ascontiguousarray(mask[y0:y1, x0:x1], dtype=np.uint8)
+    source = mask[y0:y1, x0:x1]
     source_height, source_width = source.shape
     factor_y = max(1, int(np.ceil(source_height / height)))
     factor_x = max(1, int(np.ceil(source_width / width)))
     pooled_height = int(np.ceil(source_height / factor_y))
     pooled_width = int(np.ceil(source_width / factor_x))
-    padded = np.zeros((pooled_height * factor_y, pooled_width * factor_x), dtype=np.uint8)
-    padded[:source_height, :source_width] = source
-    pooled = padded.reshape(pooled_height, factor_y, pooled_width, factor_x)
-    # Reduce records first to scan contiguous frequency rows before channel bins.
-    pooled = pooled.max(axis=1).max(axis=2)
+    if (factor_y, factor_x) == (1, 1):
+        pooled = source.astype(np.uint8, copy=False)
+    else:
+        padded = np.zeros((pooled_height * factor_y, pooled_width * factor_x), dtype=np.uint8)
+        padded[:source_height, :source_width] = source
+        pooled = padded.reshape(pooled_height, factor_y, pooled_width, factor_x)
+        pooled = pooled.max(axis=1).max(axis=2)
     if pooled.shape != (height, width):
         pooled = np.asarray(
             Image.fromarray(pooled).resize((width, height), resample=Image.Resampling.NEAREST),
@@ -127,11 +130,42 @@ def _mask_pool(
     # Display-only dilation along frequency.  Thin one-channel RFI remains easy
     # to see through the SSH preview without changing the underlying mask data.
     thickness = max(0, min(int(thickness), 4))
+    if not thickness:
+        return pooled
     thickened = pooled.copy()
     for offset in range(1, thickness + 1):
         thickened[:, offset:] = np.maximum(thickened[:, offset:], pooled[:, :-offset])
         thickened[:, :-offset] = np.maximum(thickened[:, :-offset], pooled[:, offset:])
     return thickened
+
+
+def display_scale_samples(values, rows, columns, frequency, layers, value_mask):
+    """Select finite unmarked samples for display limits on the current viewport."""
+    def collect(y, x):
+        sample = values[np.ix_(y, x)]
+        valid = np.isfinite(sample)
+        if value_mask is not None:
+            valid &= ~value_mask[np.ix_(y, x)]
+        frequencies = frequency[x]
+        for layer in layers:
+            for lo, hi in layer.frequency_ranges_mhz:
+                valid[:, frequencies.searchsorted(lo):frequencies.searchsorted(hi, 'right')] = False
+            for start, stop in layer.time_ranges_records:
+                valid[y.searchsorted(start):y.searchsorted(stop)] = False
+            for box in layer.boxes:
+                start, stop = box['records']
+                lo, hi = box['frequency_mhz']
+                valid[y.searchsorted(start):y.searchsorted(stop),
+                      frequencies.searchsorted(lo):frequencies.searchsorted(hi, 'right')] = False
+        return sample[valid]
+
+    # Count a resolved cell once even when it covers many display pixels.
+    y, x = np.unique(rows), np.unique(columns)
+    dy, dx = max(1, (len(y)+511)//512), max(1, (len(x)+767)//768)
+    finite = collect(y[::dy], x[::dx])
+    if not finite.size and (dx > 1 or dy > 1):
+        finite = collect(y, x)
+    return finite
 
 
 def render_view_image(
@@ -150,18 +184,30 @@ def render_view_image(
     auto_total_beams: int = 19,
     vmin: float | None = None,
     vmax: float | None = None,
-) -> tuple[bytes, float, float, float, float]:
+    cell_view: tuple[np.ndarray, float, float, float, float] | None = None,
+    scale_selection=None,
+    with_scale_count=False,
+) -> tuple[bytes, float, float, float, float] | tuple[bytes, float, float, float, float, int]:
     width = max(1, min(int(width), 3200))
     height = max(1, min(int(height), 1600))
     yi = _bounded_indices(values.shape[0], y0, y1, height)
     xi = _bounded_indices(values.shape[1], x0, x1, width)
+    if cell_view is not None:
+        edges, f0, f1, t0, t1 = cell_view
+        # Map screen-pixel centres to native cells; fractional zooms must not
+        # stretch a cropped channel onto the neighbouring cell's coordinates.
+        xi = np.clip(np.searchsorted(edges, f0 + (np.arange(width) + .5) * (f1 - f0) / width,
+                                     side="right") - 1, 0, values.shape[1] - 1)
+        yi = np.clip(np.floor(t0 + (np.arange(height) + .5) * (t1 - t0) / height).astype(int),
+                     0, values.shape[0] - 1)
     sampled = values[np.ix_(yi, xi)]
     if value_mask is not None:
         if value_mask.shape != values.shape:
             raise ValueError("value_mask must match values")
         sampled = sampled.copy()
         sampled[value_mask[np.ix_(yi, xi)]] = np.nan
-    finite = sampled[np.isfinite(sampled)]
+    finite = (sampled[np.isfinite(sampled)] if scale_selection is None else
+              display_scale_samples(values, yi, xi, *scale_selection, value_mask))
     percentiles = ((0.5, 99.5), (1.0, 99.0), (2.0, 98.0), (5.0, 95.0))
     if finite.size:
         auto_lo, auto_hi = np.percentile(
@@ -169,7 +215,10 @@ def render_view_image(
         )
     else:
         auto_lo, auto_hi = -1.0, 1.0
-    if not np.isfinite(auto_lo) or not np.isfinite(auto_hi) or auto_lo == auto_hi:
+    if finite.size and auto_lo == auto_hi and np.isfinite(auto_lo):
+        margin = max(abs(float(auto_lo)) * .001, .0001)
+        auto_lo, auto_hi = float(auto_lo)-margin, float(auto_hi)+margin
+    if not np.isfinite(auto_lo) or not np.isfinite(auto_hi):
         auto_lo, auto_hi = -1.0, 1.0
     custom_limits_valid = (
         vmin is not None
@@ -183,16 +232,27 @@ def render_view_image(
     scaled = np.nan_to_num((sampled - lo) / (hi - lo), nan=0.0, posinf=1.0, neginf=0.0)
     rgb = VIRIDIS[np.clip(np.rint(scaled * 255.0), 0, 255).astype(np.uint8)]
     if auto_counts is not None:
-        pooled = _mask_pool(
-            auto_counts,
-            y0,
-            y1,
-            x0,
-            x1,
-            len(yi),
-            len(xi),
-            thickness=auto_width,
-        )
+        if cell_view is not None:
+            # Pool only compressed axes, then expand every resolved axis using
+            # the SAME native-cell indices as the colors. Stretching the whole
+            # cropped mask shifts partial edge cells during single-axis zoom.
+            pooled = _mask_pool(auto_counts, y0, y1, x0, x1,
+                                min(y1 - y0, height), min(x1 - x0, width), thickness=0)
+            if y1 - y0 <= height:
+                pooled = pooled[yi - y0, :]
+            if x1 - x0 <= width:
+                pooled = pooled[:, xi - x0]
+            if auto_width:
+                original = pooled
+                pooled = original.copy()
+                for offset in range(1, auto_width + 1):
+                    pooled[:, offset:] = np.maximum(pooled[:, offset:], original[:, :-offset])
+                    pooled[:, :-offset] = np.maximum(pooled[:, :-offset], original[:, offset:])
+        else:
+            pooled = _mask_pool(
+                auto_counts, y0, y1, x0, x1, len(yi), len(xi),
+                thickness=auto_width,
+            )
         denominator = max(1, int(auto_total_beams))
         alpha = np.minimum(0.62, 0.25 + pooled.astype(np.float32) / denominator * 0.37)
         active = pooled > 0
@@ -207,14 +267,18 @@ def render_view_image(
     rgb[invalid] = INVALID_RGB
     image = Image.fromarray(np.flipud(rgb))
     stream = BytesIO()
-    image.save(stream, format="JPEG", quality=80, subsampling=1, optimize=False)
-    return (
+    if cell_view is not None and (x1 - x0 <= width or y1 - y0 <= height):
+        image.save(stream, format="PNG", compress_level=1)
+    else:
+        image.save(stream, format="JPEG", quality=80, subsampling=1, optimize=False)
+    result = (
         stream.getvalue(),
         float(lo),
         float(hi),
         float(auto_lo),
         float(auto_hi),
     )
+    return (*result, finite.size) if with_scale_count else result
 
 
 class NativeMaskState:
@@ -245,6 +309,8 @@ class NativeMaskState:
         self.spectrum_revision = 0
         self.spectrum_content_revision = 0
         self._spectrum_request_token = 0
+        self.profile_cache = {}
+        self.profile_lock = asyncio.Lock()
         self._spectrum_task: asyncio.Task[None] | None = None
         self._view_request_token = 0
         self.revision = 0
@@ -262,7 +328,7 @@ class NativeMaskState:
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="crafts-data")
         self.render_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="crafts-view")
         self.image_cache: dict[
-            tuple[Any, ...], tuple[bytes, float, float, float, float]
+            tuple[Any, ...], tuple[bytes, float, float, float, float, int]
         ] = {}
         self.load_token = 0
         self._log(self.message, "starting", True)
@@ -307,13 +373,16 @@ class NativeMaskState:
                 "dirty": self.dirty,
                 "revision": self.revision,
                 "spectrum_revision": self.spectrum_revision,
+                "mask_epoch": self._spectrum_request_token,
                 "index": self.index,
                 "group_count": len(self.groups),
                 "group": {"scan": group.scan_name, "serial": group.serial, "key": group.key, "beams": list(group.beams)},
                 "groups": [{"index": i, "scan": g.scan_name, "serial": g.serial, "done": mask_path(self.args.mask_dir, g).exists()} for i, g in enumerate(self.groups)],
                 "shape": [len(self.mjd), len(self.frequency)],
                 "frequency_range": [float(self.frequency[0]), float(self.frequency[-1])] if len(self.frequency) else None,
-                "frequency_step_mhz": float(np.nanmedian(np.diff(self.frequency))) if len(self.frequency) > 1 else None,
+                "frequency_cell_bounds": [float(self.frequency[0] - (self.frequency[1] - self.frequency[0]) / 2),
+                                          float(self.frequency[-1] + (self.frequency[-1] - self.frequency[-2]) / 2)] if len(self.frequency) > 1 else None,
+                "frequency_step_mhz": self.frequency_metadata()[1] if len(self.frequency) > 1 else None,
                 "mjd_range": [float(self.mjd[0]), float(self.mjd[-1])] if len(self.mjd) else None,
                 "local_medians": self.local_medians,
                 "auto_available": dict(self.aggregate.layer_available_beams) if self.aggregate else {},
@@ -556,13 +625,31 @@ class NativeMaskState:
             mode = str(payload["mode"])
             pol = int(payload["pol"])
             targets = (0, 1) if bool(payload.get("both")) else (pol,)
-            x0, x1 = sorted((float(payload["f0"]), float(payload["f1"])))
-            start, stop = sorted((int(np.floor(payload["t0"])), int(np.ceil(payload["t1"]))))
+            cells = payload.get("cells")
+            if cells is not None:
+                if (payload.get("group_key") != self.group.key or payload.get("revision") != self.revision
+                        or payload.get("view_mode") != self.view_mode
+                        or payload.get("beam") != self.selected_beam):
+                    raise ValueError("数据或标注范围已变化，请重新拖选。")
+                if pol not in (0, 1) or mode not in {"frequency", "time", "box", "delete"}:
+                    raise ValueError("Invalid cell-selection mode or polarization")
+                bounds = [cells.get(k) for k in ("c0", "c1", "r0", "r1")]
+                if any(type(value) is not int for value in bounds):
+                    raise ValueError("Cell bounds must be integers")
+                c0, c1, start, stop = bounds
+                if not (0 <= c0 < c1 <= len(self.frequency) and 0 <= start < stop <= len(self.mjd)):
+                    raise ValueError("Cell selection is outside the native grid")
+                # JSON keeps its existing inclusive frequency-centre / half-open
+                # record format; a one-channel selection has equal endpoints.
+                x0, x1 = float(self.frequency[c0]), float(self.frequency[c1 - 1])
+            else:
+                x0, x1 = sorted((float(payload["f0"]), float(payload["f1"])))
+                start, stop = sorted((int(np.floor(payload["t0"])), int(np.ceil(payload["t1"]))))
             x0 = max(float(self.frequency[0]), x0)
             x1 = min(float(self.frequency[-1]), x1)
             start = max(0, start)
             stop = min(len(self.mjd), stop)
-            if x1 <= x0 or stop <= start:
+            if (x1 < x0 if cells is not None else x1 <= x0) or stop <= start:
                 raise ValueError("Empty selection")
             self._push_undo()
             if self.view_mode == "single":
@@ -657,6 +744,7 @@ class NativeMaskState:
             # arriving meanwhile replace its next request rather than adding
             # another full-array calculation to the data executor.
             self._spectrum_request_token += 1
+            self.profile_cache.clear()
             if self._spectrum_task is not None and not self._spectrum_task.done():
                 return
 
@@ -770,6 +858,7 @@ class NativeMaskState:
             payload = {
                 "revision": self.spectrum_revision,
                 "content_revision": getattr(self, "spectrum_content_revision", 0),
+                "updating": getattr(self, "spectrum_content_revision", 0) != getattr(self, "_spectrum_request_token", 0),
                 "group_key": self.group.key if getattr(self, "groups", None) else None,
                 "apply_auto": bool(apply_auto),
                 "view_mode": view_mode,
@@ -788,9 +877,110 @@ class NativeMaskState:
                 payload["mean_scope"] = "global_manual_only"
             return payload
 
+    async def band_profile(self, spectrum):
+        """Compute only the requested visible profile. Serialise concurrent misses."""
+        auto = spectrum["apply_auto"]
+        mode = spectrum["view_mode"]
+        beam = spectrum["view_label"] if mode == "single" else None
+        token = spectrum["content_revision"]
+
+        def current():
+            return (self.aggregate is not None and self.group.key == spectrum["group_key"]
+                    and token == self._spectrum_request_token and self.view_mode == mode
+                    and not self.busy and (beam is None or (
+                        self.single is not None and self.single.beam == beam and self.selected_beam == beam)))
+
+        async with self.profile_lock:
+            with self.lock:
+                if not current():
+                    return None
+                key = (self.load_token, token, beam, auto)
+                if key in self.profile_cache:
+                    return self.profile_cache[key]
+                extra = None
+                if beam is None:
+                    values = self.aggregate.auto_masked_mean if auto else self.aggregate.raw_mean
+                    offsets = self.local_medians
+                else:
+                    values = self.single.raw
+                    extra = self.single.union_mask if auto else None
+                    offsets = self.single_medians
+                frequency = self.frequency
+                document = copy.deepcopy(self.document)
+
+            def calculate():
+                with self.lock:
+                    if not current():
+                        return None
+                means, counts = masked_frequency_average(values, frequency, document, extra, beam)
+                means += offsets
+                return {"mean_k": [[float(v) if np.isfinite(v) else None for v in column]
+                                   for column in means.T], "valid_channels": counts.T.tolist(),
+                        "total_channels": len(frequency)}
+
+            result = await asyncio.get_running_loop().run_in_executor(self.executor, calculate)
+            with self.lock:
+                if result is None or not current():
+                    return None
+                self.profile_cache[key] = result
+                return result
+
+    def frequency_metadata(self) -> tuple[np.ndarray, float]:
+        # Loaded axes are immutable. Reuse metadata for status polls and both
+        # image render threads instead of scanning the axis on every request.
+        cached = getattr(self, "_frequency_metadata", None)
+        if cached is None or cached[0] is not self.frequency:
+            cached = (self.frequency, frequency_cell_edges(self.frequency), float(np.median(np.diff(self.frequency))))
+            self._frequency_metadata = cached
+        return cached[1], cached[2]
+
+    def cell_payload(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Read one native sample from the same in-memory arrays as the image."""
+        with self.lock:
+            if self.aggregate is None or self.busy:
+                raise ValueError("Data are still loading")
+            view_mode, beam = str(params["view_mode"]), str(params["beam"])
+            if (params.get("group_key") != self.group.key or int(params["revision"]) != self.revision
+                    or view_mode != self.view_mode or beam != self.selected_beam):
+                raise ValueError("Cell request no longer matches the current view")
+            c, r, pol = (int(params[name]) for name in ("c", "r", "pol"))
+            if not (0 <= c < len(self.frequency) and 0 <= r < len(self.mjd) and pol in (0, 1)):
+                raise ValueError("Cell is outside the native grid")
+            apply_auto = bool(int(params.get("apply_auto", 1)))
+            if view_mode == "single":
+                if self.single is None or self.single.beam != beam:
+                    raise ValueError("Selected beam is not loaded")
+                auto_count = int(self.single.union_mask[r, c, pol])
+                value = float(self.single.raw[r, c, pol])
+                if apply_auto and auto_count:
+                    value = float("nan")
+                offset, total = self.single_medians[pol], 1
+            else:
+                values = self.aggregate.auto_masked_mean if apply_auto else self.aggregate.raw_mean
+                value = float(values[r, c, pol])
+                auto_count = int(self.aggregate.union_flagged_beam_count[r, c, pol])
+                offset, total = self.local_medians[pol], len(self.group.beams)
+            layers = [self.document.polarizations[pol]]
+            if view_mode == "single" and beam in self.document.beam_polarizations:
+                layers.append(self.document.beam_polarizations[beam][pol])
+            frequency = float(self.frequency[c])
+            manual_bad = any(
+                any(a <= frequency <= b for a, b in layer.frequency_ranges_mhz)
+                or any(a <= r < b for a, b in layer.time_ranges_records)
+                or any(box["frequency_mhz"][0] <= frequency <= box["frequency_mhz"][1]
+                       and box["records"][0] <= r < box["records"][1] for box in layer.boxes)
+                for layer in layers
+            )
+            return {"group_key": self.group.key, "revision": self.revision,
+                    "view_mode": view_mode, "beam": beam, "apply_auto": apply_auto,
+                    "c": c, "r": r, "pol": pol, "frequency_mhz": frequency,
+                    "delta_k": value if np.isfinite(value) else None,
+                    "temperature_k": value + offset if np.isfinite(value + offset) else None,
+                    "manual_bad": manual_bad, "auto_flagged_beams": auto_count, "total_beams": total}
+
     def render(
         self, params: dict[str, Any]
-    ) -> tuple[bytes, float, float, float, float]:
+    ) -> tuple[bytes, float, float, float, float, int]:
         with self.lock:
             if self.aggregate is None:
                 raise ValueError("Data are still loading")
@@ -800,6 +990,13 @@ class NativeMaskState:
             x0 = max(0, int(np.searchsorted(self.frequency, f0, side="left")))
             x1 = min(len(self.frequency), int(np.searchsorted(self.frequency, f1, side="right")))
             y0, y1 = max(0, int(np.floor(t0))), min(len(self.mjd), int(np.ceil(t1)))
+            cells = bool(int(params.get("cells", 0)))
+            cell_view = None
+            if cells:
+                edges = self.frequency_metadata()[0]
+                x0 = int(np.clip(np.searchsorted(edges, f0, side="right") - 1, 0, len(self.frequency) - 1))
+                x1 = int(np.clip(np.searchsorted(edges, f1, side="left"), x0 + 1, len(self.frequency)))
+                cell_view = (edges, f0, f1, t0, t1)
             x1, y1 = max(x0 + 1, x1), max(y0 + 1, y1)
             apply_auto = bool(int(params.get("apply_auto", 1)))
             show_auto = bool(int(params.get("show_auto", 1)))
@@ -824,10 +1021,19 @@ class NativeMaskState:
                 value_mask = None
                 auto = self.aggregate.union_flagged_beam_count[:, :, pol] if show_auto else None
                 auto_total_beams = 19
-            key = (self.revision, view_mode, beam, pol, x0, x1, y0, y1, width, height, apply_auto, show_auto, contrast, auto_width, vmin, vmax)
+            adapt = bool(int(params.get("clean_scale", 0)))
+            key = (self.load_token, self._spectrum_request_token if adapt else None,
+                   view_mode, beam, pol, x0, x1, y0, y1, width, height, apply_auto, show_auto, contrast, auto_width, vmin, vmax,
+                   (f0, f1, t0, t1) if cells else None)
             cached = self.image_cache.get(key)
             if cached is not None:
                 return cached
+            selection = None
+            if adapt:
+                layers = [self.document.polarizations[pol]]
+                if view_mode == "single" and beam in self.document.beam_polarizations:
+                    layers.append(self.document.beam_polarizations[beam][pol])
+                selection = self.frequency, copy.deepcopy(layers)
         result = render_view_image(
             values,
             auto,
@@ -843,6 +1049,9 @@ class NativeMaskState:
             auto_total_beams=auto_total_beams,
             vmin=vmin,
             vmax=vmax,
+            cell_view=cell_view,
+            scale_selection=selection,
+            with_scale_count=True,
         )
         with self.lock:
             if len(self.image_cache) >= 20:
@@ -875,26 +1084,37 @@ class StateHandler(BaseHandler):
 
 
 class SpectrumHandler(BaseHandler):
-    def get(self) -> None:
-        self.write_json(
-            self.state.spectrum_payload(
-                bool(int(self.get_argument("apply_auto", "1"))),
-                self.get_argument("view_mode", "mean"),
-                self.get_argument("beam", None),
-            )
+    async def get(self) -> None:
+        payload = self.state.spectrum_payload(
+            bool(int(self.get_argument("apply_auto", "1"))),
+            self.get_argument("view_mode", "mean"), self.get_argument("beam", None),
         )
+        if self.get_argument("include_profile", "0") == "1" and payload["selected_ready"] and not payload["updating"]:
+            payload["band_profile"] = await self.state.band_profile(payload)
+        self.write_json(payload)
+
+
+class CellHandler(BaseHandler):
+    def get(self) -> None:
+        try:
+            params = {key: self.get_argument(key) for key in self.request.arguments}
+            self.set_header("Cache-Control", "no-store")
+            self.write_json(self.state.cell_payload(params))
+        except (ValueError, KeyError) as error:
+            self.write_json({"error": str(error)}, 409)
 
 
 class ViewHandler(BaseHandler):
     async def get(self) -> None:
         try:
-            data, low, high, auto_low, auto_high = await asyncio.get_running_loop().run_in_executor(self.state.render_executor, self.state.render, {key: self.get_argument(key) for key in self.request.arguments})
-            self.set_header("Content-Type", "image/jpeg")
+            data, low, high, auto_low, auto_high, scale_count = await asyncio.get_running_loop().run_in_executor(self.state.render_executor, self.state.render, {key: self.get_argument(key) for key in self.request.arguments})
+            self.set_header("Content-Type", "image/png" if data.startswith(b"\x89PNG") else "image/jpeg")
             self.set_header("Cache-Control", "no-store")
             self.set_header("X-Color-Low", f"{low:.12g}")
             self.set_header("X-Color-High", f"{high:.12g}")
             self.set_header("X-Auto-Color-Low", f"{auto_low:.12g}")
             self.set_header("X-Auto-Color-High", f"{auto_high:.12g}")
+            self.set_header("X-Scale-Samples", str(scale_count))
             self.write(data)
         except Exception as error:
             self.send_error(503, reason=str(error))
@@ -990,8 +1210,10 @@ def remove_session_control(record: Path | None, state: NativeMaskState) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", nargs="?", help="nfile, group key, or SCAN:NFILE")
-    parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
-    parser.add_argument("--mask-dir", type=Path, default=DEFAULT_MASK_DIR)
+    parser.add_argument("--input-dir", type=Path, default=os.environ.get('CRAFTS_INPUT_DIR'),
+                        required=not os.environ.get('CRAFTS_INPUT_DIR'), help='Path or CRAFTS_INPUT_DIR')
+    parser.add_argument("--mask-dir", type=Path, default=os.environ.get('CRAFTS_MASK_DIR'),
+                        required=not os.environ.get('CRAFTS_MASK_DIR'), help='Path or CRAFTS_MASK_DIR')
     parser.add_argument("--one-channel-dir", type=Path)
     parser.add_argument("--sat1380-dir", type=Path)
     parser.add_argument("--require-all-auto-masks", action="store_true")
@@ -1006,7 +1228,7 @@ def main() -> None:
     args = parse_args()
     state = NativeMaskState(args)
     app = tornado.web.Application(
-        [(r"/", IndexHandler), (r"/api/state", StateHandler), (r"/api/spectrum", SpectrumHandler), (r"/api/view.jpg", ViewHandler), (r"/api/action", ActionHandler), (r"/api/control/shutdown", ShutdownHandler)],
+        [(r"/", IndexHandler), (r"/api/state", StateHandler), (r"/api/spectrum", SpectrumHandler), (r"/api/cell", CellHandler), (r"/api/view.jpg", ViewHandler), (r"/api/action", ActionHandler), (r"/api/control/shutdown", ShutdownHandler)],
         mask_state=state,
         ui_html=args.ui_html.read_text(encoding="utf-8"),
         compress_response=True,

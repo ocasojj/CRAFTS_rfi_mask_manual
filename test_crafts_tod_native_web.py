@@ -127,22 +127,24 @@ def test_ui_explains_fully_invalid_beam_mean():
 
 def test_mean_spectrum_breaks_lines_at_nan_gaps():
     html = Path(__file__).with_name("crafts_tod_native_ui.html").read_text()
-    assert "if(!Number.isFinite(v)){started=false;continue}" in html
+    assert "if(!Number.isFinite(v)){flush();" in html and "points.push(null)" in html
+    assert "if(point===null){started=false;continue}" in html
     assert "Number.isFinite(data.pol0[i])&&Number.isFinite(data.pol1[i])" not in html
 
 
 def test_mean_spectrum_has_robust_switchable_y_scale():
     html = Path(__file__).with_name("crafts_tod_native_ui.html").read_text()
     assert "<select id=\"spectrumY\"" in html
-    assert '<option value="strong">强抗RFI</option>' in html
-    assert '<option value="robust">抗RFI</option>' in html
+    assert '<option value="strong">强抗 RFI</option>' in html
+    assert '<option value="robust">抗 RFI</option>' in html
     assert "SPECTRUM_Y_LABELS" in html
     assert "fence=strong?1.5:2.5" in html
     assert "tail=strong?.02:.01" in html
     assert "mode==='percentile'" in html
     assert "mode==='full'" in html
     assert "$('#spectrumY').onchange" in html
-    assert "ctx.clip();line(data.pol0" in html
+    plot = html.split("function drawSpectrum(data)", 1)[1].split("async function pollSpectrum", 1)[0]
+    assert plot.index("ctx.clip()") < plot.index("for(const line of prepared.series)")
     assert "Mean (K)" in html
 
 
@@ -165,17 +167,18 @@ def test_waterfall_colorbar_has_independent_drag_handles_and_auto_reset():
     assert "colorRanges:[null,null]" in html
     assert "function colorbarHit" in html
     assert "function updateColorDrag" in html
-    assert "app.colorDrag={pol,handle:colorHit.handle" in html
-    assert "params.vmin=app.colorRanges[pol][0]" in html
-    assert "params.vmax=app.colorRanges[pol][1]" in html
+    assert "app.colorDrag={pol,handle:hit.handle" in html
+    assert "const fixed=job.colorRanges[pol]" in html
+    assert "[params.vmin,params.vmax]=fixed" in html
     assert "X-Auto-Color-Low" in html
-    assert "拖色标箭头：亮度范围" in html
+    assert "恢复两个偏振的自动色标" in html
 
 
 def test_spectrum_and_waterfalls_share_frequency_plot_bounds():
     html = Path(__file__).with_name("crafts_tod_native_ui.html").read_text()
-    assert "w:w-(PAD.l+PAD.r)*dpr" in html
-    assert "w:c.width-(PAD.l+PAD.r)*dpr" in html
+    bounds = "w:w-(PAD.l+PAD.r)*dpr"
+    assert bounds in html.split("function plotRect(c)", 1)[1].split("function dataAt", 1)[0]
+    assert bounds in html.split("function drawSpectrum(data)", 1)[1].split("const single=", 1)[0]
     assert "w-77*dpr" not in html
     assert "c.width-77*dpr" not in html
 
@@ -229,7 +232,7 @@ def test_ui_has_mean_and_single_beam_view_controls():
     assert 'id="beamSelect"' in html
     assert "for(let beam=1;beam<=19;beam++)" in html
     assert "action:'set_view'" in html
-    assert "view_mode:$('#viewMode').value" in html
+    assert "view_mode:job.viewMode" in html
 
 
 def test_manual_edits_are_scoped_to_mean_or_selected_beam():
@@ -292,7 +295,7 @@ def test_ui_has_bounded_auto_rfi_width_controls():
     assert 'id="rfiThin"' in html
     assert 'id="rfiThick"' in html
     assert "Math.max(0,Math.min(4,app.autoWidth+delta))" in html
-    assert "auto_width:app.autoWidth" in html
+    assert "auto_width:job.autoWidth" in html
 
 
 def test_ui_has_bounded_image_resolution_controls():
@@ -301,8 +304,8 @@ def test_ui_has_bounded_image_resolution_controls():
     assert 'id="dpiUp"' in html
     assert "const IMAGE_SCALES=[.5,.75,1,1.25,1.5,2,3,4]" in html
     assert "app.imageScaleIndex=Math.max(0,Math.min(IMAGE_SCALES.length-1" in html
-    assert "p.w/p.dpr*imageScale" in html
-    assert "p.h/p.dpr*imageScale" in html
+    assert "p.w/p.dpr*job.scale" in html
+    assert "p.h/p.dpr*job.scale" in html
     assert "ctx.imageSmoothingEnabled=false" in html
 
 

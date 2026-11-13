@@ -12,3 +12,18 @@ runtime_smoke/
 *_manual_mask.json
 *_manual_rfi_mask.npz
 .session.lock
+
+# Private deployment files, local runs and browser artifacts
+/.playwright-cli/
+/output/
+/demo/
+/rfi_runs/
+.env
+.env.*
+*.fits
+*.npz
+*.log
+*.pid
+legacy_import.json
+legacy_import_pending.json
+run.json

@@ -26,51 +26,30 @@ Dec+2654_22_09_arcdrift-M19_W_0007_T.fits
 
 ## Run
 
-For server-side data with a local macOS window, start XQuartz on the Mac and
-open a trusted X11 SSH connection:
+Activate a Python environment with NumPy, Astropy, Pillow and Tornado.
+To try the Web editor locally with synthetic observations, run:
 
 ```bash
-open -a XQuartz
-ssh -Y crafts
+python create_cell_demo.py demo
+python crafts_tod_native_web.py 0001 --input-dir demo/data --mask-dir demo/masks_demo \
+  --one-channel-dir demo/one_channel_rfi_v2_products \
+  --sat1380-dir demo/satellite_rfi_1380_products --require-all-auto-masks
 ```
 
-Or launch the validated configuration directly from the Mac clone:
+Open `http://127.0.0.1:8992/`. For server data, pass the server's input and
+output directories to the same command and forward the port with SSH.
+The campaign launcher uses a local scan manifest. Set `CRAFTS_AUTO_ROOT`
+and `CRAFTS_OUTPUT_ROOT` for the automatic products and manual output.
+Direct Web launches also accept `CRAFTS_INPUT_DIR` and `CRAFTS_MASK_DIR`.
+
+The optional remote helper scripts read `CRAFTS_SSH_HOST`, `CRAFTS_REMOTE_APP`,
+`CRAFTS_INPUT_DIR` and `CRAFTS_MASK_DIR`. The two Web helpers also require
+`CRAFTS_RUNTIME_DIR`. Set `CRAFTS_REMOTE_PYTHON` to override `python3`.
+The Matplotlib interface requires Matplotlib and can be started on the server:
 
 ```bash
-bash launch_xquartz.sh Dec+2654_22_09:0002
-```
-
-For the validated `Dec+2654_22_09__20230716` server directory, use the dedicated
-launcher. It prints the available groups before opening the requested nfile:
-
-```bash
-bash run_dec2654_server_ui.sh 2
-```
-
-For fast interactive work, use the native browser launcher. It keeps all FITS
-reads and mask writes on the server and forwards only the local web port over
-SSH; XQuartz is not used:
-
-```bash
-./run_dec2654_native_ui.sh 2 8997
-```
-
-The page opens at `http://127.0.0.1:8997/`. If that local/remote port is busy,
-select another deterministic port, for example
-`./run_dec2654_native_ui.sh 2 8998`. Keep the launcher terminal open and press
-Ctrl-C there when finished so its SSH session and remote native-UI process
-close.
-
-Run the program on the server. Discovery is recursive, and mask directories are
-inferred beside each stripe's FITS files, so the five-stripe campaign root can
-be passed directly:
-
-```bash
-cd /data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/crafts_rfi_mask_manual_x11
-export MPLBACKEND=TkAgg
-python crafts_tod_visual_mask.py 'Dec+2654_22_09:0002' \
-  --input-dir /data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/gzn_20260831/five_stripes_current_modules_0001_0010_v2 \
-  --mask-dir /data71/common_storage/zhouyunfan/test_codex20260722/oldpipeline/test_all/manual_masks
+MPLBACKEND=TkAgg python crafts_tod_visual_mask.py 1 \
+  --input-dir /path/to/calibrated/fits --mask-dir /path/to/manual/masks
 ```
 
 Print the grouped list:
@@ -170,6 +149,16 @@ python -m pytest -q test_crafts_tod_mask.py
 ```
 
 ## Update Log
+
+### 2026-11-13 — Native-grid annotation and full-band profiles
+
+- Snap waterfall selections and automatic overlays to native channel and record boundaries.
+- Inspect cell temperatures and mark frequency ranges directly from the spectrum.
+- Show per-record band means and valid channel counts for each polarization. Drag a profile to mask full-band time ranges.
+- Link record and frequency guides across plots and resize both profiles with one divider.
+- Group plot scales, marking tools, layout and shortcuts into four settings tabs. Remember themes and temperature ranges.
+- Recognize validated manual-mask imports and block launches while an import is incomplete.
+- Read deployment paths from local configuration and include a reproducible synthetic demo.
 
 ### 2026-10-27 — Mask controls and session safety
 
