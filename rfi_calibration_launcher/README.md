@@ -15,6 +15,7 @@ outputs. The default output directory is `rfi_runs` in the working directory.
 - `data_root`：定标 FITS 根目录；`relative_dir`：该条带相对目录。
 - `all_serials`：输入目录中的全部 nfile；`serials`：可供 Web 加载的 nfile。
 - `blocked_serials`：因轴或结构不兼容而暂不加载的编号。入口为其余编号建立软链接视图，不改动 FITS。
+- Optional `short_tail_records` maps eligible nfile IDs to shortened beam IDs and their observed record counts. For a listed nfile, `--check` verifies the timestamp prefix against the longest beam.
 - `generation_complete` 及审计字段：按真实检查结果填写；示例中的数量和零值均是占位值。
 
 ## 启动与预检

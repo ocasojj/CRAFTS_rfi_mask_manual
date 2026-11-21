@@ -1051,6 +1051,9 @@ function temperature(value){return Number.isFinite(value)?nice(value,4)+' K':'�
 function clearCoordinates(){app.cursor=null;cellProbe.wanted=null;clearTimeout(cellProbe.timer);cellProbe.controller?.abort();setCoordinates('移到图中查看采样值')}
 function showCellValue(data){
   if(app.cursor?.kind!=='waterfall')return;
+  if(data.total_beams===0){
+    setCoordinates(app.cursor.meta,'缺失尾部 Record','此 beam 在这个 Record 没有观测样本。');return;
+  }
   const values=`T−median ${temperature(data.delta_k)} · T ${temperature(data.temperature_k)}${data.manual_bad?' · 人工标记':''}`;
   setCoordinates(app.cursor.meta,values,`数值来自当前显示数据；使用自动 mask：${data.apply_auto?'是':'否'}。\n自动标记 ${data.auto_flagged_beams}/${data.total_beams} beam；人工标记${data.manual_bad?'已覆盖（瀑布图保留底图）':'未覆盖'}。\n${values}`);
 }
@@ -1359,7 +1362,9 @@ function applyState(s,initial=false){
   const label=s.view_mode==='single'?s.selected_beam:'19-beam Mean';
   $('#invalidLegend').textContent=s.view_mode==='single'?'当前 beam 无有效值（NaN）':'19 beams 均无有效值（NaN，不是负值）';
   $('#plotTitle0').textContent=`Pol 0 · ${label} · T−median`;$('#plotTitle1').textContent=`Pol 1 · ${label} · T−median`;
-  $('#summary').textContent=`视图 ${label}\n尺寸 ${s.shape[0]||'—'} × ${s.shape[1]||'—'}\nOneChannel ${s.auto_available.one_channel??0}/19\nSAT1380 ${s.auto_available.sat1380??0}/19\n${s.message}`;
+  const shortTail = Object.entries(s.short_beams || {}).map(([beam, n]) =>
+    `\n${beam} 仅有 ${n}/${s.shape[0]} 条 Record，尾部缺 ${s.shape[0]-n} 条`).join('');
+  $('#summary').textContent=`视图 ${label}${shortTail}\n尺寸 ${s.shape[0]||'—'} × ${s.shape[1]||'—'}\nOneChannel ${s.auto_available.one_channel??0}/19\nSAT1380 ${s.auto_available.sat1380??0}/19\n${s.message}`;
   const log=$('#log'),nextLog=s.logs.map(x=>`${x.time}  ${x.message}`).join('\n');
   if(log.textContent!==nextLog){const follow=log.scrollHeight-log.scrollTop-log.clientHeight<45;log.textContent=nextLog;if(follow)log.scrollTop=log.scrollHeight}
   document.querySelectorAll('.loading-cover').forEach(cover=>cover.hidden=s.ready);

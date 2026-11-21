@@ -415,3 +415,57 @@ def test_save_writes_global_union_each_beam_specific_mask(tmp_path: Path) -> Non
     assert summary["beams"]["M01"] == {"pol0": 1, "pol1": 0, "total": 1}
     assert summary["beams"]["M02"] == {"pol0": 0, "pol1": 1, "total": 1}
     assert summary["beams"]["M19"] == {"pol0": 0, "pol1": 0, "total": 0}
+
+
+def test_short_beam_tail_uses_available_samples_and_exports_native_grid(tmp_path: Path) -> None:
+    frequency = np.arange(5.) + 1400
+    mjd = np.arange(4.) + 60000
+    counts = {}
+    for number in range(1, 20):
+        beam = f"M{number:02d}"
+        times = mjd[:2] if beam == "M17" else mjd
+        counts[beam] = len(times)
+        flux = np.full((len(times), len(frequency), 2), number, dtype=np.float32)
+        fits.HDUList([
+            fits.PrimaryHDU(frequency),
+            fits.ImageHDU(times, name="MJD"),
+            fits.ImageHDU(flux, name="FLUX"),
+        ]).writeto(tmp_path / f"scan_arcdrift-{beam}_W_0044_T.fits")
+
+    group = discover_groups(tmp_path)[0]
+    directories = AutoMaskDirectories()
+    with np.testing.assert_raises(ValueError):
+        load_beam_averaged_tod_with_auto_masks(group, directories)
+    aggregate = load_beam_averaged_tod_with_auto_masks(group, directories, allow_short_tail=True)
+    np.testing.assert_allclose(aggregate.raw_mean[:2], 10)
+    np.testing.assert_allclose(aggregate.raw_mean[2:], (sum(range(1, 20)) - 17) / 18)
+    item = next(item for item in group.files if item.beam == "M17")
+    single = load_single_beam_tod_with_auto_masks(item, directories, reference_mjd=mjd)
+    np.testing.assert_allclose(single.raw[:2], 17)
+    assert single.raw.shape == (4, 5, 2)
+    assert np.isnan(single.raw[2:]).all()
+
+    document = MaskDocument.empty(group)
+    document.polarizations[0].time_ranges_records = [[1, 4]]
+    json_path = tmp_path / "manual.json"
+    save_mask_document(json_path, document)
+    paths = save_beam_mask_products(
+        tmp_path / "out", group=group, frequency_mhz=frequency, mjd=mjd,
+        document=document, json_path=json_path, native_record_counts=counts,
+    )
+    assert len(paths) == 19
+    for item, path in zip(group.files, paths):
+        records = counts[item.beam]
+        with np.load(path) as product:
+            assert product["mask"].shape == (records, len(frequency), 2)
+            np.testing.assert_array_equal(product["mjd"], mjd[:records])
+            np.testing.assert_array_equal(product["freq"], frequency)
+            assert int(product["manual_sample_count"]) == (records - 1) * len(frequency)
+            assert int(product["manual_global_sample_count"]) == (records - 1) * len(frequency)
+
+
+def test_short_beam_with_interior_time_gap_is_rejected() -> None:
+    from crafts_tod_mask import require_time_prefix
+
+    with np.testing.assert_raises(ValueError):
+        require_time_prefix(np.array([1., 3.]), np.array([1., 2., 3.]))

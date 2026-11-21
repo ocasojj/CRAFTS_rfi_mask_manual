@@ -53,6 +53,33 @@ class CellSelectionTests(unittest.TestCase):
                 np.testing.assert_array_equal(product['mask'],expected)
                 np.testing.assert_array_equal(product['freq'],self.state.frequency)
 
+    def test_single_short_tail_cannot_be_marked_and_web_save_uses_native_length(self):
+        st = self.state
+        st.document = MaskDocument.empty(st.group)
+        st.aggregate.native_record_counts = {beam: 3 for beam in st.group.beams}
+        st.aggregate.native_record_counts['M17'] = 2
+        st.view_mode, st.selected_beam = 'single', 'M17'
+        def mark(start, stop):
+            st.edit(self.payload(view_mode='single', beam='M17', mode='time',
+                                 cells=dict(c0=0,c1=4,r0=start,r1=stop)))
+        with self.assertRaisesRegex(ValueError, '缺失尾部'):
+            mark(2, 3)
+        mark(1, 3)
+        self.assertEqual(st.document.beam_polarizations['M17'][0].time_ranges_records, [[1, 2]])
+        st.view_mode = 'mean'
+        st.edit(self.payload(beam='M17', mode='time', pol=1, cells=dict(c0=0,c1=4,r0=2,r1=3)))
+        paths = asyncio.run(st.save())
+        for path in paths[1:]:
+            with np.load(path, allow_pickle=False) as product:
+                short = product['beam'].item() == 'M17'
+                expected = np.zeros((2 if short else 3, 4, 2), dtype=np.uint8)
+                if short:
+                    expected[1,:,0] = 1
+                else:
+                    expected[2,:,1] = 1
+                np.testing.assert_array_equal(product['mask'], expected)
+                np.testing.assert_array_equal(product['mjd'], st.mjd[:len(expected)])
+
     def test_full_band_means_and_denominators_follow_scope_and_hold_nan_gaps(self):
         state = self.state
         state.local_medians = [10., 20.]

@@ -150,6 +150,15 @@ python -m pytest -q test_crafts_tod_mask.py
 
 ## Update Log
 
+### 2026-11-21 — Short beam tails
+
+- Accept a shorter beam when its observed timestamps match the start of the reference MJD grid. Reject interior gaps.
+- Average each record over the available, unmasked beams. Show missing single-beam rows as NaN and restrict time and box edits to observed records.
+- Export each beam's manual mask, counts and MJD array at its native length.
+- Report short beams in the Web UI and support short-tail preflight checks in the campaign launcher.
+
+Adapted from [upstream short-tail support](https://github.com/Yunfan-Zhou/CRAFTS_rfi_mask_manual/commit/d0a30b8eebdc1aa40c86d7be4025e020b30a9d32).
+
 ### 2026-11-13 — Native-grid annotation and full-band profiles
 
 - Snap waterfall selections and automatic overlays to native channel and record boundaries.

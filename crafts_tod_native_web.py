@@ -379,6 +379,8 @@ class NativeMaskState:
                 "group": {"scan": group.scan_name, "serial": group.serial, "key": group.key, "beams": list(group.beams)},
                 "groups": [{"index": i, "scan": g.scan_name, "serial": g.serial, "done": mask_path(self.args.mask_dir, g).exists()} for i, g in enumerate(self.groups)],
                 "shape": [len(self.mjd), len(self.frequency)],
+                "short_beams": ({beam: n for beam, n in self.aggregate.native_record_counts.items()
+                                 if n < len(self.mjd)} if self.aggregate is not None else {}),
                 "frequency_range": [float(self.frequency[0]), float(self.frequency[-1])] if len(self.frequency) else None,
                 "frequency_cell_bounds": [float(self.frequency[0] - (self.frequency[1] - self.frequency[0]) / 2),
                                           float(self.frequency[-1] + (self.frequency[-1] - self.frequency[-2]) / 2)] if len(self.frequency) > 1 else None,
@@ -448,6 +450,7 @@ class NativeMaskState:
                     block_records=self.args.block_records,
                     progress=lambda message: self._log(message, "loading", True),
                     require_all_masks=self.args.require_all_auto_masks,
+                    allow_short_tail=True,
                 ),
             )
             with self.lock:
@@ -456,6 +459,9 @@ class NativeMaskState:
                 self.aggregate = aggregate
                 self.frequency = aggregate.frequency_mhz
                 self.mjd = aggregate.mjd
+                for beam, records in aggregate.native_record_counts.items():
+                    if records < len(self.mjd):
+                        self._log(f"{beam}: {records}/{len(self.mjd)} records; missing tail excluded from mean and export")
                 self.document = load_mask_document(mask_path(self.args.mask_dir, self.group), self.group)
                 self.document.auto_mask_files = aggregate.auto_mask_files
                 self.local_medians = []
@@ -561,6 +567,7 @@ class NativeMaskState:
                 AutoMaskDirectories(self.args.one_channel_dir, self.args.sat1380_dir),
                 block_records=self.args.block_records,
                 require_all_masks=self.args.require_all_auto_masks,
+                reference_mjd=reference_mjd,
             )
             if not np.allclose(single.frequency_mhz, reference_frequency, rtol=0.0, atol=1.0e-7):
                 raise ValueError(f"Frequency axis mismatch for {beam}")
@@ -649,6 +656,11 @@ class NativeMaskState:
             x1 = min(float(self.frequency[-1]), x1)
             start = max(0, start)
             stop = min(len(self.mjd), stop)
+            if self.view_mode == "single" and mode in {"time", "box", "delete"}:
+                length = getattr(self.aggregate, "native_record_counts", {}).get(self.selected_beam, len(self.mjd))
+                if start >= length:
+                    raise ValueError(f"{self.selected_beam} 的选区全部位于缺失尾部，没有可标记的 Record。")
+                stop = min(stop, length)
             if (x1 < x0 if cells is not None else x1 <= x0) or stop <= start:
                 raise ValueError("Empty selection")
             self._push_undo()
@@ -717,12 +729,14 @@ class NativeMaskState:
             group = self.group
             frequency = self.frequency.copy()
             mjd = self.mjd.copy()
+            native_counts = self.aggregate.native_record_counts.copy()
             self._log("Saving manual JSON and 19 per-beam NPZ products", "saving", True)
         json_target = mask_path(self.args.mask_dir, group)
 
         def write() -> list[Path]:
             save_mask_document(json_target, document)
-            return save_beam_mask_products(self.args.mask_dir, group=group, frequency_mhz=frequency, mjd=mjd, document=document, json_path=json_target)
+            return save_beam_mask_products(self.args.mask_dir, group=group, frequency_mhz=frequency, mjd=mjd,
+                                           document=document, json_path=json_target, native_record_counts=native_counts or None)
 
         try:
             paths = await asyncio.get_running_loop().run_in_executor(self.executor, write)
@@ -954,12 +968,15 @@ class NativeMaskState:
                 value = float(self.single.raw[r, c, pol])
                 if apply_auto and auto_count:
                     value = float("nan")
-                offset, total = self.single_medians[pol], 1
+                offset = self.single_medians[pol]
+                total = int(r < self.aggregate.native_record_counts.get(beam, len(self.mjd)))
             else:
                 values = self.aggregate.auto_masked_mean if apply_auto else self.aggregate.raw_mean
                 value = float(values[r, c, pol])
                 auto_count = int(self.aggregate.union_flagged_beam_count[r, c, pol])
-                offset, total = self.local_medians[pol], len(self.group.beams)
+                offset = self.local_medians[pol]
+                counts = self.aggregate.native_record_counts
+                total = sum(r < length for length in counts.values()) if counts else len(self.group.beams)
             layers = [self.document.polarizations[pol]]
             if view_mode == "single" and beam in self.document.beam_polarizations:
                 layers.append(self.document.beam_polarizations[beam][pol])

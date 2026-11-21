@@ -56,6 +56,8 @@ def show_list(manifest):
         marker = '  [HFC需复核]' if r['hfc_io_error_count'] else ''
         if r['blocked_serials']:
             marker += ' [暂不载入:'+','.join(r['blocked_serials'])+']'
+        if r.get('short_tail_records'):
+            marker += ' [可标记，尾部缺测:'+','.join(r['short_tail_records'])+']'
         print(f"{r['idrift']:>6}  {r['serials'][0]}–{r['serials'][-1]}  {r['count']:>7}  {r['relative_dir']}{marker}")
     print('\n启动: bash run_rfi_calibration.sh <idrift或完整扫描名> [v1|v2|v3] [0001]')
     print('默认 v1 + 两类自动 mask；同一版本载入已有人工标记，新版本从空白人工标记开始。')
@@ -201,6 +203,10 @@ def main():
     input_view = (output_root/'_input_views'/manifest['audit_tag']/row['project']/row['scan']/'eligible_T'
                   if row['blocked_serials'] else source)
     print(f'输入源: {source}\n保存: {destination}\n标记版本: {args.version}')
+    short_beams = row.get('short_tail_records', {}).get(serial, {})
+    if short_beams:
+        print('尾部缺测（原始 Record 数）：'+', '.join(f'{b}={n}' for b,n in short_beams.items())
+              +'；Mean 只使用实测值，保存按各 beam 原始长度。')
     if row['blocked_serials']:
         print('暂不载入不兼容组: '+', '.join(row['blocked_serials'])+'；使用单独软链接视图，原数据不变。')
     print('自动 RFI: '+('不加载；仅人工标记，界面自动层应为0/19' if args.auto=='none' else '要求本扫描的两类产品齐全'))
@@ -232,6 +238,8 @@ def main():
                 'automatic_mode':args.auto,'editor':str(editor),'audit_utc':manifest['audit_utc'],
                 'input_view':str(input_view),'excluded_serials':row['blocked_serials'],
                 'automatic_dirs':dict(zip(['one_channel','sat1380'], map(str, auto_dirs)))}
+    if row.get('short_tail_records'):
+        contract['short_tail_records'] = row['short_tail_records']
     action, previous = check_contract(destination, contract)
     if action == 'upgrade':
         print('此版本首次启用自动层：启动前将完整备份旧版本，仅更新 run.json；人工 JSON/NPZ 保持原样。')
@@ -243,7 +251,7 @@ def main():
     if args.auto == 'required':
         command.append('--require-all-auto-masks')
     if args.check:
-        freq, mjd, shape = validate_group(actual[serial])
+        freq, mjd, shape = validate_group(actual[serial], allow_short_tail=bool(short_beams))
         print(f'19 beams 轴检查通过：FLUX={shape}，freq={freq[0]:.6f}–{freq[-1]:.6f} MHz。')
     sys.path.insert(0, str(HERE))
     from session_control import resolve_occupied_port
